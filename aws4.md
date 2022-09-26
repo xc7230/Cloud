@@ -49,12 +49,12 @@ GRANT REPLICATION SLAVE ON *.*  TO 'slave_user'@'%';
 select * from mysql.user where user='slave_user'\G
 ```
 
-- aws
+- aws<br/>
 ![image](./image/aws4/11.png)
 ![image](./image/aws4/12.png)
-재시작
+재시작<br/>
 
-- 포트포워딩
+- 포트포워딩<br/>
 ![image](./image/aws4/14.png)
 
 
@@ -86,3 +86,123 @@ CALL mysql.rds_start_replication;
 show slave status;
 
 ```
+![image](./image/aws4/17.png) <br/>
+Slave_IO_Running 과 Slave_SQL_Running이 모두 Yes가 되면 된다.<br/>
+
+
+
+![image](./image/aws4/15.png)<br/>
+마스터 db에 입력을 해보면
+![image](./image/aws4/16.png)<br/>
+aws 슬레이브에서 출력이 된다. <br/>
+
+##### aws, aws 이중화
+- aws 마스터 db 생성 <br/>
+![image](./image/aws4/18.png)<br/>
+
+ - 슬레이브 db 생성 <br/>
+![image](./image/aws4/19.png)<br/>
+
+## AWS 스토리지
+- Glscier : 데이터 보관 백업 서비스. 자주 사용하지 않는 데이터를 보관 및 백업하는데 유용하다.(저장만 시켜서 데이터를 보려면 다른 스토리지에 데이터를 옮겨야 한다.)
+- S3 : 객체 스토리지 서비스(일반적으로 생각하는 클라우드 서비스 ex) 구글 드라이브)
+- EBS : ES2 인스턴스에 사용 할 수 있는 블록 스토리지(사용하려면 컴퓨터와 같이 써야한다.)
+- CloudFront
+
+### EBS
+- EC2에 인스턴스 생성하기
+![image](./image/aws4/21.png)<br/>
+인바운드 규칙 추가하기<br/>
+
+![image](./image/aws4/22.png)<br/>
+
+### S3
+- 생성하기<br/>
+![image](./image/aws4/23.png)<br/>
+
+- 권한 설정하기<br/>
+![image](./image/aws4/24.png)<br/>
+![image](./image/aws4/25.png)<br/>
+![image](./image/aws4/26.png)<br/>
+
+![image](./image/aws4/27.png)<br/>
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::DOC-EXAMPLE-BUCKET/*", #내 버켓이름
+      "Condition": {
+        "StringEquals": {
+          "s3:ExistingObjectTag/public": "yes"
+        }
+      }
+    }
+  ]
+}
+```
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::kjh-s3/*",
+      "Condition": {
+        "StringEquals": {
+          "s3:ExistingObjectTag/public": "yes"
+        }
+      }
+    }
+  ]
+}
+```
+![image](./image/aws4/28.png)<br/>
+![image](./image/aws4/29.png)<br/>
+![image](./image/aws4/30.png)<br/>
+
+이제 모든 사람에게 내 S3에 있는 자료들을 공유를 할 수 있다.<br/>
+
+### S3 EC2에 마운트하기
+
+- html 파일 하나 생성
+
+- S3에 자료 업로드 및 권한 변경
+![image](./image/aws4/31.png)<br/>
+다음과 같이 다운이 아니라 웹서버 처럼 출력이 된다.<br/>
+
+- ES3에서 설정 하기
+```shell
+apt-get update
+apt install s3fs awscli -y
+```
+
+![image](./image/aws4/32.png)<br/>
+![image](./image/aws4/33.png)<br/>
+![image](./image/aws4/34.png)<br/>
+csv파일은 절대로 공유 하지 않는다.
+
+```shell
+vi ~/.s3fs-creds
+    ACCESS_KEY_ID:SECRET_ACCESS_KEY
+```
+
+```shell
+chmod 600 ~/.s3fs-creds
+s3fs  [버킷 이름]  [특정 디렉토리]  -o passwd_file=~/.s3fs-creds
+umount  [특정 디렉토리]
+```
+![image](./image/aws4/35.png)<br/>
+다음과 같이 업로드 해놓은 s3자료를 디렉토리에 불러올 수 있다.<br/>
+
+### CloudFront
+- CloudFront 생성하기
+![image](./image/aws4/36.png)<br/>
+![image](./image/aws4/37.png)<br/>
+![image](./image/aws4/38.png)<br/>
+s3 도메인 생성되면서 s3에 저장된 파일을 출력 할 수 있다.<br/>

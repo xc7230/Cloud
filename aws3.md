@@ -514,13 +514,13 @@ vi /usr/local/tomcat9/webapps/kjh/insert.jsp
 ```
 
 3. 확인<br/>
-http://192.168.197.10/insert.html 접속
+http://192.168.197.10/insert.html 접속<br/>
 ![image](./image/aws3/8.png) <br/>
 저장을 눌러본다. <br/>
 
-![image](./image/aws3/9.png)
+![image](./image/aws3/9.png)<br/>
 정보가 입력되면 안에 입력해 놓은 코드가 작동되기 때문에 jsp파일로 전환이 된다. <br/>
 
-![image](./image/aws3/10.png)
-slave 서버인 db2에서 입력한 결과 성공적으로 입력이 된걸 확인 할 수 있다.
+![image](./image/aws3/10.png)<br/>
+slave 서버인 db2에서 입력한 결과 성공적으로 입력이 된걸 확인 할 수 있다.<br/>
 
