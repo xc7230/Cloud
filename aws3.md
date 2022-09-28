@@ -126,7 +126,7 @@ vi /usr/local/tomcat9/conf/server.xml # 파일에서 153번 줄에 다음 내용
 
 # 121번 라인에 다음 내용 추가
 <Connector protocol="AJP/1.3"
-    address="0.0.0.0"
+    address="0.0.0.0"|
     secretRequired="false"
     port="8009"
     redirectPort="8443" />
