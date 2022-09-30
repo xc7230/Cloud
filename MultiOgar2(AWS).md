@@ -10,14 +10,11 @@ curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 apt-get install -y nodejs
 
 # git에 있는 코드 다운
-wget https://github.com/m-byte918/MultiOgarII/archive/refs/heads/master.zip
+git clone https://github.com/m-byte918/MultiOgarII.git  #git코드 그대로 받아서 쓰기
 
-# 알집을 풀기위한 프로그램 설치 및 압축 풀기
-apt install -y zip
-unzip master.zip
 
 # 다운 받은 폴더로 이동
-cd MultiOgarII-master
+cd MultiOgarII
 
 # 안에 있는 노드JS 코드 인스톨
 npm i
@@ -43,25 +40,19 @@ apt update
 apt install -y apache2
 systemctl restart apache2 #서버 작동하는지 확인
 
-wget https://github.com/Luka967/Cigar/archive/refs/heads/master.zip #로그인 코드 저장
+# git에서 코드 가져오기
+git clone https://github.com/Luka967/Cigar.git
 
-# 압축 풀기
-apt install -y zip
-unzip master.zip
-
-# 권한 부여
-chmod -R 755 Cigar-master
-chmod -R 755 /var/www
 
 # 로그인 파일 이동
-cd Cigar-master/www/
+cd Cigar/www/
 mv * /var/www/html/
 
 # 파일 수정
 
 vi /var/www/html/index.html
 ```
-- index.html
+- index.html<br/>
 ![image](./image/game/1.png)<br/>
 다음과 같이 인덱스 57번째 줄에 Was의 주소와 포트 번호(8080)를 추가해준다.<br/>
 
@@ -76,5 +67,8 @@ WEB서버의 주소로 접속해 보면 다음 화면이 출력된다.<br/>
 
 그리고 옆에 서버목록에 내가 만든 서버가 올라와 있다.<br/> 
 내 서버를 선택하고 Play를 눌러보면<br/>
+
+![image](./image/game/4.png)<br/>
+다음과 같이 내 웹서버에 세포게임이 연결됐다.
 
 
