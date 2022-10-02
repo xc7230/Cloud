@@ -1,34 +1,35 @@
 # 3계층 아키텍쳐 AWS로 실습하기
 
 ## 순서
-1. S3설정 이미지 업로드, 여러 권한 해제 하기
-2. DB구성 RDS 세팅
-3. was 톰캣 서버 생성 톰캣이랑 DB연결하기 인바운드 규칙 편집 포트 8080, 8009 추가 DB인바운드 규칙 편집 우분투 톰캣 서비스 등록
+1. DB(RDS)생성하고 이중화 하기
+2. 톰캣서버에 DB연결하기
+3. 톰캣서버 로드밸런싱 및 오토스케일링 하기
+4. S3 생성하고 권한 설정하기
+5. 아파치 서버에 S3와 톰켓 로드벨런서 연결하기
 
-4. 톰캣 이미지 생성
 
-5. 톰캣 대상 그룹 포트번호 8009
 
-6. 로드 벨런싱
-
-3. 아파치가 설치된 EC2 S3에 올린 이미지를 이 곳에 출력되게 한다.우분투 인스턴스 하나 생성 웹서버 설치, 톰캣 연결 프로그램 다운 워커 지정하기(경로 잘 확인 하기)
-4. 오토 스케일링을 위한 이미지 생성 (2번의 EC2가 필요함)
-5. 부하를 분산할 로드 벨런서 생성
-6. 시작 구성 만들기 
-7. 오토 스케일링 그룹 만들기 최대 용량 3개
-- DB, 톰캣, 아파치 순으로 하기
-
-## DB 만들기
+## DB(RDS)생성하고 이중화 하기
 ![image](./image/aws5/1.png)<br/>
 데이터 베이스를 생성하고 그것을 이중화 한다.<br/>
 - RDS에 들어가서 DB를 만든다
 - MySQL WorkBench로 연결되는지 확인
 - 이중화 시작<br/>![image](./image/aws5/2.png)<br/>
+- 데이터 베이스 생성
+```sql
+CREATE DATABASE [DB이름];
+```
+- 접속할 수 있는 사용자 계정 만들기
+```sql
+CREATE USER '[계정이름]'@'%' IDENTIFIED BY '[DB 계정 패스워드]';
+GRANT ALL PRIVILEGES ON [DB이름].* TO '[계정이름]'@'%' /* 계정에 권한을 부여해준다. */
+FLUSH PRIVILEGES; /* 방금 설정한 설정을 적용한다.*/
+```
+![image](./image/aws5/24.png)<br/>
 
-
-## 톰캣 구성해서 DB랑 연결하기
+## 톰캣서버에 DB연결하기
 ![image](./image/aws5/3.png)<br/>
-톰캣 인스턴스를 생성하고 DB랑 연결한다.<br/>>
+톰캣 인스턴스를 생성하고 DB랑 연결한다.<br/>
 
 1. 인스턴스 생성
 2. 톰캣 설정
@@ -39,18 +40,22 @@ apt update
 ```
 - JAVA다운
 ```shell
-apt-get install openjdk-8-jdk
+apt install -y openjdk-8-jdk
 ```
 
-- 톰캣설치, 설정
+- 톰캣설치
 ```shell
 wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.67/bin/apache-tomcat-9.0.67.tar.gz
 
 tar zxvf apache-tomcat-9.0.67.tar.gz
 
 mv apache-tomcat-9.0.67 /usr/local/tomcat9/
+```
 
-vi /etc/systemd/tomcat.service #생성 후 다음 내용 작성
+- 톰캣 서비스 설정<br/>
+서비스 설정이란, 실행하고 있던 가상머신이 꺼졌다 켜졌을때 자동으로 적용한 프로그램을 실행하게 만드는 기능이다.<br/>
+```shell
+vi /etc/systemd/system/tomcat.service #생성 후 다음 내용 작성
 ```
 
 ```
@@ -69,6 +74,9 @@ ExecStop=/usr/local/tomcat9/bin/shutdown.sh
 [Install]
 WantedBy=multi-user.target
 ```
+- 톰캣 경로 설정<br/>
+나중에 [도메인 주소/db.jsp]를 입력했을때, 만들어 놓은 jsp파일을 불러올 수 있도록 설정한다.<br/>
+
 ```shell
 vi /usr/local/tomcat9/conf/server.xml # 파일에서 153번 줄에 다음 내용 추가
 <Context path="" docBase="[이니셜]" reloadable="true" />
@@ -83,17 +91,9 @@ vi /usr/local/tomcat9/conf/server.xml # 파일에서 153번 줄에 다음 내용
 ```
 
 
-
-```shell
-systemctl daemon-reload
-systemctl enable tomcat
-systemctl restart tomcat
-```
-![image](./image/aws5/4.png)<br/>
-인바운드 규칙에 8080포트를 추가해준다.<br/>
-
 - JSP 생성
 ```shell
+mkdir /usr/local/tomcat9/webapps/[이니셜]
 vi /usr/local/tomcat9/webapps/[이니셜]/db.jsp
 ```
 ```
@@ -122,8 +122,8 @@ InetAddress inet= InetAddress.getLocalHost();
 		Connection conn = null;
 		ResultSet rs = null;
 	      
-		String url = "jdbc:mysql://[DB 서버 IP]:3306/[이니셜_db]?serverTimezone=UTC";
-		String id = "[이니셜]";
+		String url = "jdbc:mysql://[RDS의 엔드포인트 주소]:3306/[DB이름]?serverTimezone=UTC";
+		String id = "[데이터 베이스 계정 이름]";
 		String pwd = "[DB 비번]";
 
 
@@ -150,30 +150,52 @@ InetAddress inet= InetAddress.getLocalHost();
 </body>
 </html>
 ```
+- 인바운드 규칙 설정
+![image](./image/aws5/4.png)<br/>
+인바운드 규칙에 8080, 8009포트를 추가해준다.<br/>
+
+- 서비스 실행<br/> 
+```shell
+systemctl daemon-reload
+systemctl enable tomcat
+systemctl restart tomcat
+```
+- 톰캣, DB 연결 확인
 ![image](./image/aws5/5.png)<br/>
-다음과 같이 나오면 성공<br/>
+다음과 같이 톰캣의 ip:8080/db.jsp를 입력해 RDS의 정보가 나오면 DB연결 성공이다.<br/>
 
-- 대상 그룹 생성
+- 서비스 적용 확인<br/>
+톰캣의 가상머신을 재부팅해서 서버가 실행되는지 확인해본다.<br/>
 
 
-- 로드 벨런서 생성
+
+
+## 로드 밸런싱
+- 대상 그룹 생성<br/>
+로드 밸런서를 생성하기 전, 대상그룹 먼저 생성해야 한다.<br/>
+![image](./image/aws5/20.png)<br/>
+![image](./image/aws5/21.png)<br/>
+톰캣 서버에 설정한 포트번호[8009]를 입력한다.<br/>
+![image](./image/aws5/22.png)<br/>
+타겟 설정을 마무리로 대상 그룹을 생성해준다.<br/>
+
+- 로드 밸런서 생성
 ![image](./image/aws5/16.png)<br/>
 ![image](./image/aws5/17.png)<br/>
 ![image](./image/aws5/18.png)<br/>
 
+## 오토 스케일링
 - 이미지 생성
 ![image](./image/aws5/6.png)<br/>
 
 - 시작구성 생성
 ![image](./image/aws5/7.png)<br/>
 
-- 오토 스케일링 생성
-
+- 오토 스케일링 생성<br/>
+![image](./image/aws5/23.png)<br/>
 ![image](./image/aws5/8.png)<br/>
 ![image](./image/aws5/9.png)<br/>
 
-- 로드벨런싱
-오토스케일링을 생성할 때 같이 생성 할 수 있다.<br/>
 
 ## 웹서버에 S3와 톰캣 연결하기
 
@@ -181,22 +203,58 @@ InetAddress inet= InetAddress.getLocalHost();
 ![image](./image/aws5/10.png)<br/>
 ![image](./image/aws5/11.png)<br/>
 ![image](./image/aws5/12.png)<br/>
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::[s3이름]/*",
+            "Condition": {
+                "StringEquals": {
+                    "s3:ExistingObjectTag/public": "yes"
+                }
+            }
+        }
+    ]
+}
+```
 ![image](./image/aws5/13.png)<br/>
+이미지 파일 하나를 업로드 한 뒤<br/>
 ![image](./image/aws5/14.png)<br/>
 ![image](./image/aws5/15.png)<br/>
-- 다운 및 설정
+
+- 웹서버 만들기
 ```shell
 apt update
 apt install -y apache2 apache2-dev libapache2-mod-jk
+```
 
+
+- 웹서버와 S3연결
+```shell
 vi /var/www/html/index.html
 ```
+
 ```html
 <h1>Web Server</h1>
 <meta charset="utf-8">
 영화 헌트
 <img  src="[S3에 있는 이미지 주소]">	
 ```
+![image](./image/aws5/25.png)<br/>
+
+- 연결 확인
+```shell
+systemctl restart apache2
+```
+![image](./image/aws5/26.png)<br/>
+내 웹서버 아이피를 입력했을때, 다음과 같이 S3에 저장된 사진이 출력되면 성공이다.<br/>
+
+- 웹서버 톰캣 연결하기
+
 ```shell
 vi  /etc/libapache2-mod-jk/workers.properties
 ```
@@ -206,6 +264,59 @@ worker.worker1.type=ajp13
 worker.worker1.host=[톰캣의 LB의 주소]
 worker.worker1.port=8009
 ```
+![image](./image/aws5/27.png)<br/>
 
-aaa
+```shell
+vi /etc/apache2/sites-available/000-default.conf
+```
+```conf
+JKMount /*.jsp worker1
+```
+![image](./image/aws5/28.png)<br/>
+다음과 같이 <VirtualHost *:80> 밑줄에 추가한다.<br/>
 
+- 연결 확인
+
+```shell
+systemctl restart apache2 #아파치 재시작
+```
+
+
+![image](./image/aws5/29.png)<br/>
+인터넷 주소창에 [내 웹서버 아이피/db.jsp] 입력했을때, DB와 연결된 톰캣 서버가 출력되면 성공이다.<br/>
+
+```shell
+systemctl enable apache2 #아파치 재시작
+```
+성공했으면 웹서버도 재부팅시 자동으로 서버를 시작하도록 설정해준다.<br/>
+
+## 로드 밸런싱
+- 대상 그룹 생성<br/>
+이름만 입력하고 아무 설정도 하지 않고 생성한다.<br/>
+
+- 로드 밸런스 생성<br/>
+![image](./image/aws5/30.png)<br/>
+이번에는 웹서버 http형식으로 출력하기 때문에 Application Load Balancer를 선택하고 웹서버의 대상 그룹을 선택하고 생성하면 된다.(꼭 가상머신을 재시작하여 웹서버가 성공적으로 실행되는지 확인한다.)<br/>
+
+## 오토 스케일링
+
+- 이미지 생성<br/>
+톰캣 서버를 오토 스케일링 했을때와 같은 과정이다. 다른 점은 웹서버의 가상머신의 이미지를 생성한다는 것이다.
+
+- 시작구성 생성<br/>
+웹서버 이미지를 선택해 생성한다.<br/>
+
+- 오토 스케일링 생성<br/>
+웹서버의 시작 구성과 로드 밸런스를 선택해 생성한다.<br/>
+
+## 최종확인
+위의 과정이 전부 성공적으로 끝났으면 로드 밸런스의 도메인 주소로 확인해보면 된다.<br/>
+![image](./image/aws5/31.png)<br/>
+
+- 기본화면<br/>
+![image](./image/aws5/32.png)<br/>
+S3가 연결된 index.html이 실행되는걸 확인 할 수 있다.<br>
+
+- 톰캣 서버<br/>
+![image](./image/aws5/33.png)<br/>
+도메인 주소/db.jsp를 입력했을때 톰캣 서버가 실행되고 톰캣서버와 연결된 DB정보를 출력하는걸 확인했으면 3계층 아키텍쳐를 성공적으로 구현했다고 볼 수 있다.<br/>
