@@ -96,7 +96,7 @@ vi /usr/local/tomcat9/conf/server.xml # 파일에서 153번 줄에 다음 내용
 mkdir /usr/local/tomcat9/webapps/[이니셜]
 vi /usr/local/tomcat9/webapps/[이니셜]/db.jsp
 ```
-```
+```jsp
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@page import="java.sql.*"%>
 <%@ page import="java.net.InetAddress" %>
