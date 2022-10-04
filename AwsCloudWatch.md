@@ -173,3 +173,89 @@ aws cloudwatch put-metric-data --metric-name "MemoryUsage" --namespace "EC2" --v
 ```
 ![image](./image/cloudwatch/21.png)<br/>
 
+
+### 반복작업 스케쥴링
+```shell
+crontab -e  # 명령어를 실행하면 편집기가 실행되고 편집기를 이용해 내용을 작성한다.
+```
+
+```shell
+crontab -e
+```
+```shell
+* * * * *       /root/ex04.sh #1분마다 ex04.sh를 실행한다.
+```
+```shell
+crontab -l
+```
+![image](./image/cloudwatch/22.png)<br/>
+
+
+### 온프레미스로 설정해보기
+- 프로메테우스 : 메트릭 수집 프로그램
+- 그라파나 : 시각화 도구
+- 알람 : 메일 서버, DNS 서버
+
+#### 메일 서버 만들기
+```shell
+apt install -y postfix # no configration 선택
+vi /etc/hostname
+```
+```shell
+mail.cloudcampkjh.kro.kr #내가 만든 도메인 주소 넣기
+```
+```shell
+cp /etc/postfix/main.cf.proto /etc/postfix/main.cf
+vi /etc/postfix/main.cf
+```
+https://www.server-world.info/en/note?os=Ubuntu_18.04&p=mail&f=1 을 참조하여 파일 수정<br/>
+- 187번 라인 참조
+![image](./image/cloudwatch/23.png)<br/>
+111.111.0.0/24 형식으로 저장<br/>
+
+```shell
+newaliases
+systemctl restart postfix
+netstat -anlp | grep :25
+```
+![image](./image/cloudwatch/24.png)<br/>
+
+```shell
+apt -y install dovecot-core dovecot-pop3d dovecot-imapd
+```
+https://www.server-world.info/en/note?os=Ubuntu_18.04&p=mail&f=2 참조해서 내용 수정<br/>
+
+```shell
+systemctl restart dovecot
+netstat -anlp | grep :143
+```
+![image](./image/cloudwatch/25.png)<br/>
+
+- 확인<br/>
+```shell
+apt -y install mailutils
+echo 'export MAIL=$HOME/Maildir/' >> /etc/profile.d/mail.sh
+useradd -s /bin/bash -m test01
+passwd test01
+useradd -s /bin/bash -m test02
+passwd test02
+su - test01
+```
+- 메일 보내기<br/>
+```shell
+mail test02@localhost
+		Cc:  #엔터
+		Subject: Test Mail   #입력하고 엔터
+		This is the first mail.    #입력하고 엔터
+		#Ctrl + d로 작성 종료
+exit
+```
+- 메일 확인<br/>
+```shell
+su - test02
+mail
+```
+![image](./image/cloudwatch/26.png)<br/>
+
+#### 도메인 설정
+한국에 할당받은 도메인 설정<br/>
