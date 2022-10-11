@@ -175,3 +175,75 @@ systemctl restart kibana
 ![image](./image/elastic/9.png)<br/>
 ![image](./image/elastic/10.png)<br/>
 ![image](./image/elastic/11.png)<br/>
+
+## Kafka와 연결
+` logstash '
+```shell
+vi /etc/logstash/conf.d/kafka.conf
+```
+```shell
+input {
+        kafka {
+                bootstrap_servers => "192.168.197.10:9092"  # 내 카프카 ip
+                topics => ["logging.post.like"]
+        }
+}
+
+output {
+        file {
+                path => "/etc/logstash/data/kafka.log"
+        }
+}
+```
+
+- 확인<br/>
+```shell
+mkdir /etc/logstash/data
+cd /etc/logstash/data
+touch kafka.log
+chmod 755 kafka.log
+chown logstash:logstash kafka.log
+
+systemctl restart logstash  # 재시작
+```
+
+```shell
+tail -f kafka.log
+```
+장고의 like버튼을 눌러 확인<br/>
+![image](./image/elastic/12.png)<br/>
+
+
+## 엘라스틱에 카프카 정보 보내기
+
+` logstash `
+```shell
+vi /etc/logstash/conf.d/kafka.conf
+```
+```shell
+
+input {
+        kafka {
+                bootstrap_servers => "192.168.197.10:9092"
+                topics => ["logging.post.like"]
+        }
+}
+
+
+output {
+        elasticsearch {
+                hosts => ["http://192.168.197.100:9200"]    # 엘라스틱 ip
+                index => "post-like-%{+YYYY.MM}"
+        }
+}
+```
+
+- 재시작
+```shell
+systemctl restart logstash
+systemctl restart elasticsearch
+```
+
+- 확인<br/>
+![image](./image/elastic/13.png)<br/>
+홈페이지에서 like를 누르면 카프카의 정보가 로그스태시를 통해 키바나로 이동되어 키바나 홈페이지에 출력된다.<br/>
