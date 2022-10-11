@@ -80,4 +80,142 @@ vi /etc/hosts
 /opt/kafka/bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server broker:9092
 ```
 ![image](./image/Pub_Sub패턴(kafka)/4.png)<br/>
-다음과 같이 producer에 입력했던 메세지들을 확인 할 수 있다.
+다음과 같이 producer에 입력했던 메세지들을 확인 할 수 있다.<br/>
+
+## 파이썬과 연결하기
+```python
+pip install kafka-python
+```
+
+`main.py`
+```python
+from kafka import KafkaProducer
+import time
+
+producer = KafkaProducer(
+    bootstrap_servers=['192.168.197.10:9092']
+)
+start = time.time()
+
+for i in range(100):
+    producer.send('test', value="test".encode("utf-8"))
+    producer.flush()
+
+print("elapsed :", time.time() - start)
+```
+
+- 카프카 설정
+```shell
+vi /opt/kafka/config/server.properties
+```
+```shell
+advertised.listeners=PLAINTEXT://192.168.197.10:9092    # 내 아이피로 수정 후 재시작
+```
+![image](./image/Pub_Sub패턴(kafka)/5.png)<br/>
+
+- 실행<br/>
+![image](./image/Pub_Sub패턴(kafka)/6.png)<br/>
+
+## 장고 프로젝트와 연결하기
+웹 프로젝트 실행<br/>
+```shell
+pip install kafka-python
+```
+`board/view/py` 추가
+```python
+from kafka import KafkaProducer
+import time
+
+producer = KafkaProducer(
+    bootstrap_servers=['192.168.197.10:9092']
+)
+
+
+@login_required(login_url='/accounts/login')
+def like(request, bid):
+    post = Post.objects.get(id=bid)
+    user = request.user
+
+    producer.send('test', value="test".encode("utf-8")) #추가
+    producer.flush()    #추가
+    if post.like.filter(id=user.id).exists():
+        post.like.remove(user)
+        return JsonResponse({'message': 'deleted', 'like_cnt': post.like.count()})
+    else:
+        post.like.add(user)
+        return JsonResponse({'message': 'added', 'like_cnt': post.like.count()})
+```
+
+- 확인<br/>
+카프카 프로젝트에서 `consumer.py` 생성
+```python
+from kafka import KafkaConsumer
+from json import loads
+
+consumer = KafkaConsumer(
+    'test',
+    bootstrap_servers=['192.168.197.10:9092']
+)
+
+print('[begin] get consumer list')
+
+for message in consumer:
+    print("Topic: %s, Partition: %d, Offset: %d, Key: %s, Value: %s" % ( message.topic, message.partition, message.offset, message.key, message.value.decode('utf-8') ))
+
+print('[end] get consumer list')
+```
+장고 프로젝트 실행 후 좋아요를 누르면<br/>
+![image](./image/Pub_Sub패턴(kafka)/7.png)<br/>
+다음과 같이 `consumer.py` 콘솔에 문구가 전송된다.<br/>
+
+### JSON형태로 받기
+장고 프로젝트 `board/view/py` 변경
+```python
+from kafka import KafkaProducer
+from json import dumps
+import time
+
+producer = KafkaProducer(
+    acks=0,
+    compression_type='gzip',
+    bootstrap_servers=['192.168.197.10:9092'],
+    value_serializer=lambda x: dumps(x).encode('utf-8')
+)   # 추가
+
+@login_required(login_url='/accounts/login')
+def like(request, bid):
+    post = Post.objects.get(id=bid) # 추가
+    user = request.user # 추가
+
+    data = data = { 'user' : user.id, 'post_id' : post.id } # 추가
+    producer.send('logging.post.like', value= data)
+    producer.flush()
+    if post.like.filter(id=user.id).exists():
+        post.like.remove(user)
+        return JsonResponse({'message': 'deleted', 'like_cnt': post.like.count()})
+    else:
+        post.like.add(user)
+        return JsonResponse({'message': 'added', 'like_cnt': post.like.count()})
+```
+
+
+
+- 확인<br/>
+카프카 프로젝트에서 `consumer.py` 변경<br/>
+```python
+from kafka import KafkaConsumer
+from json import loads
+
+consumer = KafkaConsumer(
+    'logging.post.like',    # 변경 후 실행
+    bootstrap_servers=['192.168.197.10:9092']
+)
+
+print('[begin] get consumer list')
+
+for message in consumer:
+    print("Topic: %s, Partition: %d, Offset: %d, Key: %s, Value: %s" % ( message.topic, message.partition, message.offset, message.key, message.value.decode('utf-8') ))
+
+print('[end] get consumer list')
+```
+![image](./image/Pub_Sub패턴(kafka)/8.png)<br/>
