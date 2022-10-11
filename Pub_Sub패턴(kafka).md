@@ -184,12 +184,12 @@ producer = KafkaProducer(
 
 @login_required(login_url='/accounts/login')
 def like(request, bid):
-    post = Post.objects.get(id=bid) # 추가
-    user = request.user # 추가
+    post = Post.objects.get(id=bid) 
+    user = request.user 
 
     data = data = { 'user' : user.id, 'post_id' : post.id } # 추가
-    producer.send('logging.post.like', value= data)
-    producer.flush()
+    producer.send('logging.post.like', value= data)# 추가
+    producer.flush()# 추가
     if post.like.filter(id=user.id).exists():
         post.like.remove(user)
         return JsonResponse({'message': 'deleted', 'like_cnt': post.like.count()})
