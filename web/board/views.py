@@ -5,12 +5,25 @@ from django.shortcuts import render, redirect
 from board.forms import PostForm
 from board.models import Post, PostImage
 from reply.forms import ReplyForm
+from kafka import KafkaProducer
+from json import dumps
+import time
 
+producer = KafkaProducer(
+    acks=0,
+    compression_type='gzip',
+    bootstrap_servers=['192.168.197.10:9092'],
+    value_serializer=lambda x: dumps(x).encode('utf-8')
+)
 
 @login_required(login_url='/accounts/login')
 def like(request, bid):
     post = Post.objects.get(id=bid)
     user = request.user
+
+    data = data = { 'user' : user.id, 'post_id' : post.id }
+    producer.send('logging.post.like', value= data)
+    producer.flush()
     if post.like.filter(id=user.id).exists():
         post.like.remove(user)
         return JsonResponse({'message': 'deleted', 'like_cnt': post.like.count()})

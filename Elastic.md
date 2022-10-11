@@ -82,6 +82,8 @@ dnf -y install logstash
 
 - 간단한 파이프라인 설정
 ```shell
+chgrp logstash /var/log/secure	# 권한 설정
+chmod 640 /var/log/secure		# 권한 설정
 vi /etc/logstash/conf.d/sshd.conf
 ```
 ```shell
@@ -177,7 +179,7 @@ systemctl restart kibana
 ![image](./image/elastic/11.png)<br/>
 
 ## Kafka와 연결
-` logstash '
+` logstash `
 ```shell
 vi /etc/logstash/conf.d/kafka.conf
 ```
