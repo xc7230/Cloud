@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contents %}
+
+{% if post %}
+<script>
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function createReply(bid, event){
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = function() {
+            if (httpRequest.readyState == XMLHttpRequest.DONE && httpRequest.status == 200 ) {
+                var json_data = JSON.parse(httpRequest.responseText);
+
+                if (json_data['message']=='created') {
+
+                    var divElement = document.createElement('div');
+                    divElement.setAttribute('class','row');
+                    event.parentNode.parentNode.nextSibling.nextSibling.append(divElement);
+                    divElement.innerHTML = '<div class="col-md-2">{{request.user}}</div><div class="col-md-8 form-group"><input name="contents" class="form-control" type="text" value="'+event.parentNode.previousSibling.previousSibling.children[0].value+'" readonly></div><div class="col-md-2"><button onclick="updateReplyAjax('+bid+','+json_data['rid']+',this)" class="btn btn-primary text-uppercase" type="button">수정</button> <button onclick="deleteReply('+json_data['rid']+',this)"class="btn btn-primary text-uppercase" type="button">삭제</button></div>';
+                    event.parentNode.previousSibling.previousSibling.children[0].value = '';
+                } else {
+                    console.log(json_data);
+                }
+            }
+        };
+            var csrftoken = getCookie('csrftoken');
+            httpRequest.open("POST", "/reply/create/"+bid, true);
+            httpRequest.setRequestHeader('X-CSRFToken', csrftoken);
+            httpRequest.setRequestHeader('Contents-type', 'application/json');
+            httpRequest.send('{"contents":"'+event.parentNode.previousSibling.previousSibling.children[0].value+'"}');
+    }
+
+    function updateReply(event){
+        if (event.parentNode.previousSibling.previousSibling.children[0].readOnly) {
+            event.parentNode.previousSibling.previousSibling.children[0].readOnly = false;
+        } else {
+            event.setAttribute('type', 'submit');
+            console.log('수정');
+        }
+    }
+
+    function updateReplyAjax(bid, rid, event){
+        if (event.parentNode.previousSibling.previousSibling.children[0].readOnly) {
+            event.parentNode.previousSibling.previousSibling.children[0].readOnly = false;
+        } else {
+            var httpRequest = new XMLHttpRequest();
+            httpRequest.onreadystatechange = function() {
+                if (httpRequest.readyState == XMLHttpRequest.DONE && httpRequest.status == 200 ) {
+                    var json_data = JSON.parse(httpRequest.responseText);
+
+                    if (json_data['message']=='updated') {
+                        event.parentNode.previousSibling.previousSibling.children[0].readOnly = true;
+                    } else {
+                        console.log(json_data);
+                    }
+                }
+            };
+            var csrftoken = getCookie('csrftoken');
+            httpRequest.open("POST", "/reply/update/"+bid+"/"+rid, true);
+            httpRequest.setRequestHeader('X-CSRFToken', csrftoken);
+            httpRequest.setRequestHeader('Contents-type', 'application/json');
+
+            console.log(event.parentNode.previousSibling.previousSibling.children[0].value);
+            httpRequest.send('{"contents":"'+event.parentNode.previousSibling.previousSibling.children[0].value+'"}');
+        }
+    }
+
+    function deleteReply(rid, event){
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = function() {
+            if (httpRequest.readyState == XMLHttpRequest.DONE && httpRequest.status == 200 ) {
+                var json_data = JSON.parse(httpRequest.responseText);
+
+                if (json_data['message']=='deleted') {
+                    event.parentNode.parentNode.nextSibling.nextSibling.nextSibling.nextSibling.remove();
+                    event.parentNode.parentNode.remove();
+
+                } else {
+                    console.log(json_data);
+                }
+            }
+        };
+        // GET 방식으로 요청을 보내면서 데이터를 동시에 전달함.
+        httpRequest.open("GET", "/reply/delete/"+rid, true);
+        httpRequest.send();
+    }
+
+
+
+
+
+
+</script>
+
+<section class="page-section bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="modal-body">
+                    <!-- Project details-->
+                    <h2 class="text-uppercase">{{ post.title }}</h2>
+                    <p class="item-intro text-muted">{{ post.writer }}</p>
+                    {% if post.postimage_set %}
+                    {% for postimage in post.postimage_set.all %}
+                    <img class="img-fluid d-block mx-auto"
+                         src="/media/{{ postimage.image }}" alt="...">
+                    {% endfor %}
+                    {% endif %}
+                    <p>
+                        {{ post.contents | safe }}
+                    </p>
+
+                    {% if request.user == post.writer %}
+                    <a href="/board/update/{{ post.id }}" class="btn btn-primary">수정</a>
+                    <a href="/board/delete/{{ post.id }}" class="btn btn-primary">삭제</a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+
+        <hr/>
+
+            <div class="row">
+                <div class="col-md-2">
+                </div>
+                <div class="col-md-8 form-group">
+                    <input name="contents" placeholder="댓글 내용을 입력해주세요."
+                           class="form-control" type="text">
+                </div>
+                <div class="col-md-2">
+                    <button onclick="createReply({{ post.id }}, this)" class="btn btn-primary text-uppercase"
+                            type="button">
+                        댓글 작성
+                    </button>
+                </div>
+            </div>
+        <div class="container">
+            <br/>
+            {% for reply in post.reply_set.all %}
+            <!--            <form action="/reply/update/{{ post.id }}/{{ reply.id }}" method="post">-->
+            <!--                                    {% csrf_token %}-->
+
+            <div class="row">
+
+                <div class="col-md-2">
+                    {{reply.writer}}
+                </div>
+                <div class="col-md-8 form-group">
+                    <input name="contents" class="form-control" type="text" value="{{ reply.contents }}" readonly>
+                </div>
+                <div class="col-md-2">
+                    {% if request.user == reply.writer %}
+                    <button onclick="updateReplyAjax({{ post.id }},{{ reply.id }},this)"
+                            class="btn btn-primary text-uppercase" type="button">
+                        수정
+                    </button>
+
+                    <button onclick="deleteReply({{ reply.id }}, this)" class="btn btn-primary text-uppercase"
+                            type="button">
+                        삭제
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <!--            </form>-->
+            <br/>
+            {% endfor %}
+        </div>
+
+
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}

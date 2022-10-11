@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block contents %}
+<section class="page-section" id="contact">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-heading text-uppercase">이메일 입력</h2>
+        </div>
+
+        <form id="contactForm" method="post">
+            {% csrf_token %}
+            <div class="row align-items-stretch mb-5">
+                <div class="col-md-3">
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Your E-mail *" class="form-control" autocomplete="email" required
+                               id="id_email">
+
+                    </div>
+
+                </div>
+                <div class="col-md-3">
+                </div>
+
+            </div>
+
+
+            <div class="text-center">
+                <button class="btn btn-primary btn-xl text-uppercase" type="submit">이메인 인증</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

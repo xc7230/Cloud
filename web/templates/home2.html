@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Camera Web App</title>
+
+</head>
+<body>
+<canvas id="camera--sensor"></canvas>
+<button id="camera--trigger">사진촬영</button>
+<button id="record">녹화</button>
+
+<img src="//:0" alt="" id="camera--output">
+<video id="camera--view"></video>
+<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+        crossorigin="anonymous"></script>
+<script>
+let constraints = { video: { facingMode: "user"}, audio: false};
+const $btn = document.querySelector("#record");
+let isRecording = false;
+let mediaRecorder = null;
+const videoArray = [];
+$btn.onclick = async function(event) {
+    if (!isRecording) {
+        const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        mediaRecorder = new MediaRecorder(mediaStream, {mimeType: 'video/webm; codecs=vp9,opus'});
+
+        mediaRecorder.ondataavailable = (event) => {
+            videoArray.push(event.data);
+        }
+        mediaRecorder.onstop = (event) => {
+            const blob = new Blob(videoArray, {
+                "type": "video/webm"
+            });
+
+            var fd = new FormData();
+            fd.append('data', blob);
+            console.log("보냄");
+            $.ajax({
+                    url: "/image",
+                    data: fd,
+                    type: "POST",
+                    processData: false,
+                    contentType: false
+                })
+                .done(function(json) {
+                    console.log("받음");
+                });
+            videoArray.splice(0);
+        }
+        mediaRecorder.start();
+        isRecording = true;
+        console.log("녹음 시작");
+    } else {
+        mediaRecorder.stop();
+        isRecording = false;
+    }
+}
+
+</script>
+</body>
+
+</html>
