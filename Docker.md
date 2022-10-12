@@ -8,7 +8,7 @@
 ![image](./image/docker/1.png)<br/>
 가상화 허용으로 바꾼다.<br/>
 
-- 인식이 잘 안될때
+- 네트워크 인식이 잘 안될때
 ```shell
 nmcli device
 nmcli networking on
@@ -113,3 +113,155 @@ docker images
 docker run hello:1.0
 ```
 ![image](./image/docker/5.png)<br/>
+
+### 환경 변수
+- 이미지 만들기
+```shell
+mkdir abcd2
+cd abcd2/
+vi Dockerfile
+```
+```shell
+FROM  alpine:latest
+RUN   apk update && apk add figlet
+ENV   MESSAGE=test
+CMD   echo $MESSAGE | figlet
+```
+```shell
+docker build --tag hello:1.1 .
+docker images
+docker run hello:1.1
+docker run -e MESSAGE=abcd hello:1.1    # 도커 설정의 ENV의 MESSAGE 값을 abcd로 바꿔 출력한다.
+```
+![image](./image/docker/6.png)<br/>
+
+### 환경변수(파이썬)
+- 파이썬 설치
+```shell
+vi Dockerfile
+```
+```shell
+FROM  python:3.9.14-buster
+ADD ./test.py /test.py  # test.py를 컨테이너에 옮긴다.
+CMD python /test.py
+```
+
+```shell
+vi test.py
+```
+```shell
+var = 1234
+
+print(var)
+```
+
+```shell
+docker build --tag hello:1.2 .
+docker run hello:1.2
+```
+
+- 파이썬 환경변수<br/>
+` test.py `
+```python
+import os
+var = os.environ['ARGS']
+var2 = os.environ['ARGS2']
+print(var)
+print(var2)
+```
+
+`Dockerfile`
+```shell
+FROM  python:3.9.14-buster
+ADD ./test.py /test.py
+ENV  ARGS=1234
+ENV  ARGS2=12345
+CMD  python /test.py
+```
+
+```shell
+docker build --tag hello:1.4 .
+docker run hello:1.4
+```
+![image](./image/docker/7.png)<br/>
+
+- 도커에서 django 서버 만들기 <br/>
+```shell
+mkdir django
+cd django
+vi Dockerfile
+```
+```shell
+FROM python:3.9.14-buster
+RUN pip install django
+RUN mkdir /django_project
+WORKDIR /django_project
+RUN django-admin startproject config .
+EXPOSE 8000
+CMD python manage.py runserver 0.0.0.0:8000
+```
+
+실행<br/>
+```shell
+docker run --name django2 -d -p 80:8000 django:1.0
+```
+![image](./image/docker/8.png)<br/>
+
+일단 접속에 성공했다.<br/>
+
+- 우주선 띄우기<br/>
+장고를 재대로 실행하려면 `settings.py`의 설정을 변경해야 한다.<br/>
+![image](./image/docker/9.png)<br/>
+
+```shell
+vi Dockerfile
+```
+```shell
+FROM python:3.9.14-buster
+RUN pip install django
+RUN mkdir /django_project
+WORKDIR /django_project
+RUN django-admin startproject config .
+RUN sed -i "s/\[\]/\[\'\*\'\]/g" /django_project/config/settings.py # ALLOWED_HOSTS를 변경한다.
+EXPOSE 8000
+CMD python manage.py runserver 0.0.0.0:8000
+```
+```shell
+docker build --tag django:1.1 .
+docker run --name django -d -p 80:8000 django:1.1
+```
+- 확인<br/>
+![image](./image/docker/10.png)<br/>
+
+
+- 웹서버 받아 올리기<br/>
+```shell
+yum -y install wget
+yum -y install zip
+mkdir web
+cd web
+mkdir web
+cd web
+wget http://100.100.100.100:8888/web.zip    # 완성된 웹서버 다운
+unzip web.zip
+vi secret.json  # 내 정보를 바꿔준다.
+cd ..
+vi Dockerfile
+```
+```shell
+FROM python:3.9.14-buster
+ADD ./web/ /web/    # web 프로젝트 폴더를 컨테이너 web디렉토리 안에 넣는다.
+RUN pip install django
+WORKDIR /web
+RUN pip install -r requirements.txt
+RUN python manage.py migrate
+EXPOSE 8000
+CMD python manage.py runserver 0.0.0.0:8000
+```
+```shell
+docker build --tag web:1.1 .
+docker run --name web -d -p 80:8000 web:1.1
+```
+- 확인<br/>
+![image](./image/docker/11.png)<br/>
+
