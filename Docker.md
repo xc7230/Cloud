@@ -244,7 +244,7 @@ mkdir web
 cd web
 wget http://100.100.100.100:8888/web.zip    # 완성된 웹서버 다운
 unzip web.zip
-vi secret.json  # 내 정보를 바꿔준다.
+vi secret.json  # 내 정보를 기입한다.
 cd ..
 vi Dockerfile
 ```
