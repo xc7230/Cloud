@@ -333,17 +333,19 @@ var content = function(req, resp) {
 var w = http.createServer(content);
 w.listen(9000);
 ```
+
+- 도커 허브에 업로드
 ```shell
 docker build --tag xc7230/hello:0.2 .
 docker push xc7230/hello:0.2
 ```
-
+- 파드 생성하기
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: hello-pod
-  label:
+  labels:
     app: hello
 spec:
   containers:
@@ -356,6 +358,8 @@ spec:
     port:
     - containerPort: 9000
 ```
+
+- 확인<br/>
 ![image](./image/kubernetes/20.png)<br/>
 ![image](./image/kubernetes/21.png)<br/>
 
