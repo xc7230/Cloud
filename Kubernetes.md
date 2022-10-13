@@ -108,10 +108,10 @@ vi /etc/fstab
 ### master 설정
 ```shell
 kubeadm init --pod-network-cidr 192.168.1.0/24
-# 만약 에러가 나면 kubeadm reset로 리셋 후 다시 시작한다.
+# 만약 에러가 나면 명령어 kubeadm reset 입력해서 리셋 후 다시 시작한다.
 
 
-#나오는 명령어 따로 저장해둔다. 사람마다 다름 실행x
+#나오는 명령어 따로 저장해둔다. 노드 연결할때 쓰는 명령어로 사람마다 다름 master에서 실행x
 kubeadm join 192.168.197.100:6443 --token 5b2pjz.sf4632azhzpcp7f7 \
         --discovery-token-ca-cert-hash sha256:a624bb31c56ec6595a9c8adfe4a7ce5721aae18bd78150ac457bc6f5ca109b20  
 ```
@@ -129,13 +129,13 @@ kubectl get nodes
 ```shell
 dnf -y install wget
 wget https://docs.projectcalico.org/manifests/calico.yaml
-vi calico.yaml  #4551 주석 제거하고 줄 맞추기
+vi calico.yaml  # 4551, 4552번째 줄, 주석 제거하고 줄 맞추기
 ```
 ![image](./image/kubernetes/4.png)<br/>
 ![image](./image/kubernetes/5.png)<br/>
 
 ```shell
-kubectl apply -f calico.yaml
+kubectl apply -f calico.yaml    # 설정 끝난 yaml파일 실행
 ```
 
 ### node 설정
@@ -164,4 +164,199 @@ kubectl get nodes   # 다 Ready뜨는지 확인
 ![image](./image/kubernetes/8.png)<br/>
 
 설정을 다 했으면 스냅샷을 남겨 백업해둔다.<br/>
+
+## Pod
+- 파드는 컨테이너를 하나 이상 모아 놓은 것, 쿠퍼네티스에서는 최소단위
+1. 매니페스트<br/>
+매니페스트란 쿠버네티스의 오브젝트를 생성하기 위한 메타 정보를 YAML이나 JSON으로 기술한 파일<br/>
+
+2. YAML 파일<br/>
+키: 값 형태로 작성하는 파일<br/>
+
+## 대시보드 설정
+### master
+```shell
+wget https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+vi recommended.yaml
+```
+```shell
+39 spec:
+40   ports:
+41     - port: 443
+42       targetPort: 8443
+43   selector:
+44     k8s-app: kubernetes-dashboard
+45   type: NodePort     #여기 추가
+```
+![image](./image/kubernetes/9.png)<br/>
+
+- yaml 파일 실행
+```shell
+kubectl apply -f recommended.yaml
+kubectl get pods -A # 대시보드 파드가 있는지 확인, 없으면 kubectl delete -f recommended.yaml 입력
+```
+![image](./image/kubernetes/17.png)<br/>
+
+- 대시보드 포트번호 확인
+```shell
+kubectl get services -n kubernetes-dashboard    # 포트번호 확인 사람마다 다름
+```
+![image](./image/kubernetes/10.png)<br/>
+
+- 방화벽 설정
+```shell
+firewall-cmd --permanent --add-port=31167/tcp
+firewall-cmd --reload
+
+systemctl stop firewalld
+systemctl disable firewalld
+setenforce 0    # 모든 노드에 적용
+```
+- 웹 브라우저로 https://마스터노드IP:확인한포트번호 접속<br/>
+![image](./image/kubernetes/11.png)<br/>
+- 토큰 번호 확인(master)<br/>
+```shell
+cat <<EOF | kubectl create -f -
+ apiVersion: v1
+ kind: ServiceAccount
+ metadata:
+   name: admin-user
+   namespace: kube-system
+EOF
+
+cat <<EOF | kubectl create -f -
+ apiVersion: rbac.authorization.k8s.io/v1
+ kind: ClusterRoleBinding
+ metadata:
+   name: admin-user
+ roleRef:
+   apiGroup: rbac.authorization.k8s.io
+   kind: ClusterRole
+   name: cluster-admin
+ subjects:
+ - kind: ServiceAccount
+   name: admin-user
+   namespace: kube-system
+EOF
+
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+```
+![image](./image/kubernetes/12.png)<br/>
+띄어쓰기 없이 토큰만 복사 후<br/>
+![image](./image/kubernetes/13.png)<br/>
+대시보드 설정 끝<br/>
+
+- 대시보드 파드 추가 하기<br/>
+![image](./image/kubernetes/14.png)<br/>
+    - 코드 추가
+    ```yaml
+    apiVersion: v1
+    kind: Pod
+    metadata:
+    name: nginx
+    spec:
+    containers:
+    - name: nginx
+      image: nginx:latest
+    ```
+![image](./image/kubernetes/15.png)<br/>
+![image](./image/kubernetes/16.png)<br/>
+
+
+### 실습
+```shell
+mkdir test
+cd test
+vi Dockerfile
+```
+`Dockerfile`
+```shell
+FROM  node:slim
+ADD ./hello.js /hello.js
+EXPOSE 8000
+CMD node /hello.js
+```
+```shell
+vi hello.js
+```
+`hello.js`
+```js
+var http = require('http');
+var content = function(req, resp) {
+ resp.end("Hello Kubernetes!" + "\n");
+ resp.writeHead(200);
+}
+var w = http.createServer(content);
+w.listen(8000);
+```
+
+```shell
+docker login # 내 도커 허브 아이디와 비밀번호 후 hello 디렉토리 생성
+docker build --tag xc7230/hello:0.1 .
+docker push xc7230/hello:0.1
+```
+
+
+- 파드 추가
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod
+  label:
+    app: hello
+spec:
+  containers:
+  - name: hello-container1
+    image: xc7230/hello:0.1
+    port:
+    - containerPort: 8000
+```
+![image](./image/kubernetes/18.png)<br/>
+![image](./image/kubernetes/19.png)<br/>
+
+- 2개 해보기
+`Dockerfile`
+```shell
+FROM  node:slim
+ADD ./hello.js /hello.js
+EXPOSE 9000
+CMD node /hello.js
+```
+`hello.js`
+```js
+var http = require('http');
+var content = function(req, resp) {
+ resp.end("Hello Kubernetes!" + "\n");
+ resp.writeHead(200);
+}
+var w = http.createServer(content);
+w.listen(9000);
+```
+```shell
+docker build --tag xc7230/hello:0.2 .
+docker push xc7230/hello:0.2
+```
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod
+  label:
+    app: hello
+spec:
+  containers:
+  - name: hello-container1
+    image: xc7230/hello:0.1
+    port:
+    - containerPort: 8000
+  - name: hello-container2
+    image: xc7230/hello:0.2
+    port:
+    - containerPort: 9000
+```
+![image](./image/kubernetes/20.png)<br/>
+![image](./image/kubernetes/21.png)<br/>
+
 
