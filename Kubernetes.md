@@ -346,7 +346,7 @@ kind: Pod
 metadata:
   name: hello-pod
   labels:
-    app: hello
+    apps: hello
 spec:
   containers:
   - name: hello-container1
@@ -363,4 +363,165 @@ spec:
 ![image](./image/kubernetes/20.png)<br/>
 ![image](./image/kubernetes/21.png)<br/>
 
+- 컨테이너 확인<br/>
+![image](./image/kubernetes/22.png)<br/>
+컨테이너의 콘솔로 진입<br/>
 
+```shell
+apt update
+apt install -y curl
+curl localhost:8000
+curl localhost:9000
+```
+![image](./image/kubernetes/23.png)<br/>
+
+## 레이블
+- 파드에 레이블 달기<br/>
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-1-1
+  labels:
+    type: web
+    lo: dev
+spec:
+  containers:
+  - name: hello-container2
+    image: xc7230/hello:0.2
+    port:
+    - containerPort: 9000
+```
+레이블만 바꿔서 만들어 보기<br/>
+```
+type: web
+lo: dev
+
+type: db
+lo: dev
+
+type: web
+lo: test
+
+type: db
+lo: test
+```
+![image](./image/kubernetes/24.png)<br/>
+
+- 만들어진 파드 서비스 하기<br/>
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-1
+spec:
+  selector:
+    type: web
+  ports:
+  - port: 8000
+```
+![image](./image/kubernetes/25.png)<br/>
+
+- 확인<br/>
+![image](./image/kubernetes/26.png)<br/>
+![image](./image/kubernetes/27.png)<br/>
+
+## 노드 스케줄러
+원하는 노드에 파드를 만들 수 있다.<br/>
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-3-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: node1
+  containers:
+  - name: container
+    image: xc7230/hello:0.2
+```
+![image](./image/kubernetes/28.png)<br/>
+하나의 노드를 지정해서 계속 파드를 생성하며 부하를 주면 작동이 멈춘다.<br/>
+
+## QoS(Quality of Service)
+![image](./image/kubernetes/29.png)<br/>
+파드의 사양을 설정 할 수 있다.<br/>
+
+- 콘솔에서 확인 방법<br/>
+```shell
+ kubectl describe Pod pod-3-1 | grep QoS  # pod 이름
+```
+![image](./image/kubernetes/30.png)<br/>
+
+1. BestEffort : resources 항목을 아예 사용하지 않을 경우 BestEffort로 분류
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-besteffort-pod
+spec:
+  containers:
+  - name: nginx-besteffort-pod
+    image: nginx:latest
+```
+![image](./image/kubernetes/31.png)<br/>
+- 부하주기
+```shell
+apt update
+apt install -y stress
+stress --vm 4 --vm-bytes 1024M  # 과부화가 되면 꺼진다.
+```
+
+
+
+2. Guaranteed : resources 항목에서 limits와 request의 값이 완전히 동일한 경우 Guaranteed로 분류
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-guaranteed-pod
+spec:
+  containers:
+  - name: nginx-guaranteed-pod
+    image: nginx:latest
+    resources:
+      limits:
+        memory: "256Mi"
+        cpu: "1000m"
+      requests:
+        memory: "256Mi"
+        cpu: "1000m"
+```
+![image](./image/kubernetes/32.png)<br/>
+- 부하주기
+```shell
+apt update
+apt install -y stress
+stress --vm 1 --vm-bytes 256M   #256M 이상을 주면 꺼진다.
+```
+
+3. Burstable : resources 항목에서 limits가 requests보다 클 경우 Burstable로 분류
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-burstable-pod
+spec:
+  containers:
+  - name: nginx-burstable-pod
+    image: nginx:latest
+    resources:
+      limits:
+        memory: "1024Mi"
+        cpu: "1000m"
+      requests:
+        memory: "256Mi"
+        cpu: "500m"
+```
+![image](./image/kubernetes/33.png)<br/>
+- 부하주기
+```shell
+apt update
+apt install -y stress
+stress --vm 2 --vm-bytes 512M  #1024M 이상을 주면 꺼진다.
+```
