@@ -525,3 +525,209 @@ apt update
 apt install -y stress
 stress --vm 2 --vm-bytes 512M  #1024M 이상을 주면 꺼진다.
 ```
+
+4. 우선 순위
+```
+	Guaranteed > Burstable > BestEffort
+	단, Burstable과 BestEffort 간에는 메모리의 사용량에 따라 우선순위가 바뀔 수 있다.
+```
+
+## Vloume
+컨테이너가 사용할 가상의 디스크<br/>
+
+1. emptyDir<br/>
+파드내에 있는 컨테이너가 꺼져도 폴더가 남아있음<br/>
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-volume-1
+spec:
+  containers:
+  - name: container1
+    image: xc7230/hello:0.2
+    volumeMounts:
+    - name: empty-dir
+      mountPath: /mount1
+  - name: container2
+    image: xc7230/hello:0.2
+    volumeMounts:
+    - name: empty-dir
+      mountPath: /mount2
+  volumes:
+  - name : empty-dir
+    emptyDir: {}
+```
+![image](./image/kubernetes/34.png)<br/>
+![image](./image/kubernetes/35.png)<br/>
+
+`Container1`
+```shell
+cd mount1
+touch test
+```
+
+`Container2`
+```shell
+cd mount2
+ls  # 컨테이너1에서 생성한 test파일이 있는지 확인
+```
+![image](./image/kubernetes/36.png)<br/>
+
+
+2. hostPath
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-volume-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: node1
+  containers:
+  - name: container
+    image: xc7230/hello:0.2
+    volumeMounts:
+    - name: host-path
+      mountPath: /mount1
+  volumes:
+  - name : host-path
+    hostPath:
+      path: /node-vol
+      type: DirectoryOrCreate
+```
+
+`Container1`
+```shell
+cd mount1
+touch test
+```
+
+`node1`
+```shell
+cd mount1
+ls
+```
+![image](./image/kubernetes/37.png)<br/>
+
+3. PVC / PV
+PVC를 지정하여 관리자가 생성한 PV와 연결해서 사용<br/>
+
+- pv
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-03
+spec:
+  capacity:
+    storage: 2G
+  accessModes:  # 권한
+  - ReadWriteOnce
+  local:
+    path: /node-vol # 노드에 디렉토리가 있어야 함
+  nodeAffinity: # 노드 제한
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - {key: kubernetes.io/hostname, operator: In, values: [노드이름]}
+```
+
+- pvc
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-01
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1G
+  storageClassName: ""
+```
+
+- 파드 생성
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-volume-3
+spec:
+  containers:
+  - name: container
+    image: 이미지이름
+    volumeMounts:
+    - name: pvc-pv
+      mountPath: /mount3
+  volumes:
+  - name : pvc-pv
+    persistentVolumeClaim:
+      claimName: pvc-01
+  - name : host-path
+    hostPath:
+      path: /node-v2
+      type: DirectoryOrCreate
+```
+![image](./image/kubernetes/38.png)<br/>
+![image](./image/kubernetes/39.png)<br/>
+pvc-pv는 1:1 관계다.<br/>
+
+- 사이드카 패턴
+`master`
+- 이미지 업로드용 디렉토리 생성
+```shell
+mkdir puller
+cd puller
+```
+- contents-pull.sh 추가
+
+- Dockerfile 생성
+```shell
+vi Dockerfile
+```
+```shell
+FROM python:3.9.15-buster
+ADD ./contents-pull.sh /contents-pull.sh
+RUN chmod 755 /contents-pull.sh
+WORKDIR /
+CMD /contents-pull.sh
+```
+
+- 이미지 파일 생성 후 도커 허브에 업로드
+```shell
+docker build --tag xc7230/puller:0.2 .
+docker push xc7230/puller:0.2
+```
+
+- 쿠버네티스 대시보드에 파드 생성하기
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sidecar
+spec:
+  containers:      
+  - name: httpd
+    image: httpd
+    volumeMounts:
+    - mountPath: /usr/local/apache2/htdocs/
+      name: contents-vol
+      readOnly: true
+  - name: puller
+    image: xc7230/puller:0.2
+    env:
+    - name: CONTENTS_SOURCE_URL
+      value: "http://192.168.197.1:1234"
+    - name: FILE_NAME
+      value: "index.html"
+    volumeMounts:
+    - mountPath: /data
+      name: contents-vol
+  volumes:           
+  - name: contents-vol
+    emptyDir: {}
+```
+
