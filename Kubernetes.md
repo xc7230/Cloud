@@ -731,3 +731,28 @@ spec:
     emptyDir: {}
 ```
 
+
+- DB파드
+파드가 삭제돼도 안에 있는 데이터를 삭제하기 않게 만든다.<br/>
+```yaml
+kind: Pod
+metadata:
+  name: mysql-server
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: node1
+  containers:      
+  - name: mysql
+    image: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "qwer1234"
+    volumeMounts:
+    - mountPath: /var/lib/mysql
+      name: db-vol
+  volumes:
+  - name : db-vol
+    hostPath:
+      path: /db-vol
+      type: DirectoryOrCreate
+```
