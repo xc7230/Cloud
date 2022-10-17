@@ -735,6 +735,7 @@ spec:
 - DB파드
 파드가 삭제돼도 안에 있는 데이터를 삭제하기 않게 만든다.<br/>
 ```yaml
+apiVersion: v1
 kind: Pod
 metadata:
   name: mysql-server
@@ -755,4 +756,233 @@ spec:
     hostPath:
       path: /db-vol
       type: DirectoryOrCreate
+```
+
+## ConfigMap
+  - 컨피그맵 생성
+  ```yaml
+    apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: cm-dev
+  data:
+    SSH: 'false'
+    User: dev
+  ```
+
+  - 컨피그맵 적용
+  ```yaml
+    apiVersion: v1
+  kind: Pod
+  metadata:
+    name: pod-1
+  spec:
+    containers:
+    - name: container
+      image: ubuntu:latest
+      command: ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
+      envFrom:
+      - configMapRef:
+          name: cm-dev
+  ```
+  - 확인
+  ```shell
+  echo $SSH
+  echo $User
+  ```
+  ![image](./image/kubernetes/40.png)<br/>
+
+  - 실습
+  - 컨피그맵 생성
+  ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: sql-pw
+    data:
+      MYSQL_ROOT_PASSWORD : "qwer1234"
+  ```
+
+  - 파드 생성
+  ``` yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: mysql-server
+  spec:
+    nodeSelector:
+      kubernetes.io/hostname: node1
+    containers:      
+    - name: mysql
+      image: mysql
+      envFrom:
+      - configMapRef: # 이곳 변경
+          name: sql-pw
+      volumeMounts:
+      - mountPath: /var/lib/mysql
+        name: db-vol
+    volumes:
+    - name : db-vol
+      hostPath:
+        path: /db-vol
+        type: DirectoryOrCreate
+  ```
+  ![image](./image/kubernetes/41.png)<br/>
+
+## Secret : 컨피그 맵과 유사 하지만 기밀을 데이터를 보관하기 위한 것
+  - 컨피그맵 작성
+  ```yaml
+  apiVersion: v1
+  kind: Secret
+    metadata:
+    name: sec-dev
+  data:
+    Key: cXdlcjEyMzQ= #base24에서 비밀번호를 암호화 해준다.
+  ```
+  - 파드 생성
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: mysql-server
+  spec:
+    nodeSelector:
+      kubernetes.io/hostname: node1
+    containers:      
+    - name: mysql
+      image: mysql
+      envFrom:
+      - secretRef:  # 이곳 변경
+          name: sec-dev
+      volumeMounts:
+      - mountPath: /var/lib/mysql
+        name: db-vol
+    volumes:
+    - name : db-vol
+      hostPath:
+        path: /db-vol
+        type: DirectoryOrCreate
+  ```
+  ![image](./image/kubernetes/42.png)<br/>
+
+## Namespace
+네임스페이스별로 파드 동작 확인하기<br/>
+```shell
+kubectl get pods -n kubernetes-dashboard
+```
+  - 네임스페이스 생성
+  ```yaml
+    apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: nm-1
+  ```
+  ![image](./image/kubernetes/43.png)<br/>
+
+  - 파드 생성
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: pod-1
+    namespace: nm-1 # 네임스페이스 이름
+    labels:
+      app: pod
+  spec:
+    containers:
+    - name: container
+      image: ubuntu:latest
+      command: ["/bin/sh", "-ec", "while :; do echo '.'; sleep 5 ; done"]
+  ```
+- 리소스쿼터
+
+  - 네임스페이스 생성
+  ```yaml
+    apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: nm-3
+  ```
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: rq-1
+  namespace: nm-3
+spec:
+  hard:
+    requests.memory: 1Gi
+    limits.memory: 1Gi
+```
+
+- 확인
+  - 파드 생성
+  ```yaml
+    apiVersion: v1
+  kind: Pod
+  metadata:
+    name: nginx-guaranteed-pod
+  spec:
+    containers:
+    - name: nginx-guaranteed-pod2
+      image: nginx:latest
+      resources:
+        limits:
+          memory: "256Mi"
+          cpu: "256m"
+        requests:
+          memory: "256Mi"
+          cpu: "256m"
+  ```
+  파드가 성공적으로 만들어 진다.<br/>
+  - 파드생성(과용량)
+  ```yaml
+      apiVersion: v1
+  kind: Pod
+  metadata:
+    name: nginx-guaranteed-pod
+  spec:
+    containers:
+    - name: nginx-guaranteed-pod2
+      image: nginx:latest
+      resources:
+        limits:
+          memory: "1024Mi"
+          cpu: "1024m"
+        requests:
+          memory: "1024Mi"
+          cpu: "1024m"
+  ```
+  리소스 초과로 파드가 생성되지 않는다.<br/>
+    ![image](./image/kubernetes/44.png)<br/>
+
+## LimitRange
+- 네임스페이스 생성
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nm-4
+```
+
+- 리밋레인지 설정
+```yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: lr-1
+  namespace: nm-4
+spec:
+  limits:
+  - type: Container
+    min:  # 최소 메모리
+      memory: 0.1Gi
+    max:  # 최대 메모리
+      memory: 0.4Gi
+    maxLimitRequestRatio:
+      memory: 3
+    defaultRequest: # 기본 메모리값
+      memory: 0.1Gi
+    default:
+      memory: 0.2Gi
 ```
