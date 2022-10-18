@@ -18,5 +18,8 @@
 ## Container
 ### Kubernetes
 - [설치 및 대시보드](https://github.com/xc7230/Cloud/blob/main/Kubernetes.md)
+- [Kubernetes를 이용한 3계층 아키텍처 구축](https://github.com/xc7230/Cloud/blob/main/3%EA%B3%84%EC%B8%B5(%EC%BF%A0%EB%B2%84%EB%84%A4%ED%8B%B0%EC%8A%A4).md)
+
 ### Docker
 - [도커로 컨테이너 환경 만들기](https://github.com/xc7230/Cloud/blob/main/Docker.md)
+
