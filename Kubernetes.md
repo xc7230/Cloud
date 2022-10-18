@@ -834,7 +834,7 @@ spec:
   ```yaml
   apiVersion: v1
   kind: Secret
-    metadata:
+  metadata:
     name: sec-dev
   data:
     Key: cXdlcjEyMzQ= #base24에서 비밀번호를 암호화 해준다.
@@ -986,3 +986,141 @@ spec:
     default:
       memory: 0.2Gi
 ```
+
+## Service
+- Cluster IP : 타입을 지정하지 않으면 기본적으로 생긴다.
+  - 파드 생성
+    ```yaml
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: pod-2
+      labels:
+        app: pod
+    spec:
+      containers:
+      - name: container
+        image: xc7230/hello:0.1
+
+
+    ```
+  - 서비스 생성
+    ```yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-1
+    spec:
+      selector:
+        app: pod  # 레이블 이름으로 선택함
+      ports:
+      - port: 9000
+        targetPort: 8000
+      ```
+    ![image](./image/kubernetes/45.png)<br/>
+
+  - 확인<br/>
+  `master`
+    ```shell
+    curl 10.109.25.65:9000
+    ```
+    ![image](./image/kubernetes/46.png)<br/>
+  `pod-2`
+    ```shell
+    curl svc-1:9000
+    ```
+    ![image](./image/kubernetes/47.png)<br/>
+    내부에서는 서비스 이름으로 호출이 가능하다.<br/>
+  
+
+- NodePort
+  - 서비스 생성하기
+    ```yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-2
+    spec:
+      selector:
+        app: pod
+      ports:
+      - port: 9000
+        targetPort: 8000
+        nodePort: 30000
+      type: NodePort
+    ```
+    ![image](./image/kubernetes/48.png)<br/>
+  - 확인
+      ![image](./image/kubernetes/49.png)<br/>
+      노드들(node1, node2)의 아이피에 설정한 포트번호(30000)를 추가해주면 pod-2의 정보가 나온다.<br/>
+- LoadBalancer
+  - 설정하기
+    ```shell
+    kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    grep strictARP 
+
+    # strictARP: false면 True로 바꿔줘야 한다.
+    ```
+    ```shell
+    kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e "s/strictARP: false/strictARP: true/" | \
+    kubectl apply -f - -n kube-system
+    ```
+    ```shell
+    #Warning: resource configmaps/kube-proxy is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.configmap/kube-proxy configured 이 되면 성공
+    ```
+  - MetalLB 설치
+    ```shell
+    kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+    kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+    ```
+  - 설치 확인
+    ```shell
+    kubectl get pod -n metallb-system
+    ```
+    ![image](./image/kubernetes/50.png)<br/>
+    모두 Running이 뜨면 성공<br/>
+  - Layer 2 Configuration
+    ```shell
+    vi metallb_config.yaml
+    ```
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      namespace: metallb-system
+      name: config
+    data:
+      config: |
+        address-pools:
+        - name: default
+          protocol: layer2
+          addresses:
+          - 192.168.197.220-192.168.197.250
+    ```
+    ```shell
+    kubectl apply -f metallb_config.yaml
+    # configmap/config created가 나오면 성공
+    ```
+  - MetalLB 사용
+    ```shell
+    kubectl get svc/istio-ingressgateway -n istio-system
+    ```
+  - 서비스 만들기
+    ```yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: svc-3
+    spec:
+      selector:
+        app: pod
+      ports:
+      - port: 9000
+        targetPort: 8000
+      type: LoadBalancer
+    ```
+  - 확인
+    ![image](./image/kubernetes/51.png)<br/>
+    ![image](./image/kubernetes/52.png)<br/>
+    MetalLB로 할당된 아이피에 포트번호를 입력하면 다음과 같이 출력된다.<br/>   
