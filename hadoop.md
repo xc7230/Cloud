@@ -242,6 +242,6 @@ stop-dfs.sh
 ```shell
 stop-yarn.sh
 ```
-
+https://tdoodle.tistory.com/m/entry/How-To-Install-and-Configure-Hadoop-on-CentOSRHEL-8
 
 
