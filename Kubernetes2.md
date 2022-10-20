@@ -289,3 +289,142 @@ kubectl top no
 - 만약 노드가 출력되지 않을시<br/>
 metrics-server 설정에서 추가한다.
 ![image](./image/kubernetes2/15.png)<br/>
+
+- HPA 설정
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: cpu1
+spec:
+ selector:
+   matchLabels:
+      resource: cpu
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       resource: cpu
+   spec:
+     containers:
+     - name: container
+       image: xc7230/hello:0.1
+       resources:
+         requests:
+           cpu: 100m
+         limits:
+           cpu: 200m
+```
+
+- 서비스 생성
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+ name: svc1
+spec:
+ selector:
+    resource: cpu
+ ports:
+   - port: 8000
+     targetPort: 8000
+     nodePort: 30001
+ type: NodePort
+```
+
+- 오토스케일링 생성
+```yaml
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-resource-cpu
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cpu1
+  metrics:
+  - type: Resource 
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+```
+
+- cpu에 부하 주기
+생성된 파드 중 하나의 파드에 접속해 부하를 줘본다.
+```shell
+apt update
+apt install -y stress
+stress -c 1
+```
+![image](./image/kubernetes2/17.png)<br/>
+두 개였던 파드가 부하를 받자 늘어났다.<br/>
+
+- memory 설정
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: memory1
+spec:
+ selector:
+   matchLabels:
+      resource: memory
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       resource: memory
+   spec:
+     containers:
+     - name: container
+       image: xc7230/hello:0.1
+       resources:
+         requests:
+           memory: 10Mi
+         limits:
+           memory: 20Mi
+```
+- 서비스 생성
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+ name: svc2
+spec:
+ selector:
+    resource: memory
+ ports:
+   - port: 8000
+     targetPort: 8000
+     nodePort: 30002
+ type: NodePort
+```
+
+- 오토스케일링 생성
+```yaml
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-resource-memory
+spec:
+  maxReplicas: 10
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: memory1
+  metrics:
+  - type: Resource 
+    resource:
+      name: memory
+      target:
+        type: AverageValue
+        averageUtilization: 50
+```
+![image](./image/kubernetes2/18.png)<br/>
+메모리 사용량이 많은지 단숨에 파드가 늘어난다.<br/>
