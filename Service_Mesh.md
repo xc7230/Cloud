@@ -45,3 +45,185 @@ http://마스터IP:kiali포트번호로 접속<br/>
 ![image](./image/service_mesh/5.png)<br/>
 graph에서 연결된 default 네임스페이스가 잘 작동하는지 모니터링 해본다.<br/>
 ![image](./image/service_mesh/6.png)<br/>
+
+
+### Istio 레이블 별로 묶기
+`backend-deployment.yml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: backend-deployment
+ labels:
+   type: was
+   app: backend
+spec:
+ selector:
+   matchLabels:
+    type: was
+    app: backend
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       type: was
+       app: backend
+   spec:
+    containers:
+    - name: backend
+      image: xc7230/backend:latest
+      envFrom:
+        - configMapRef:
+            name: mysql-cm
+        - secretRef:
+            name: mysql-sec
+      ports:
+      - containerPort: 8000
+      resources:
+        requests:
+          cpu: 100m
+        limits:
+          cpu: 200m
+```
+
+`backend 서비스`
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+  labels:
+    type: was
+    app: backend  
+spec:
+  selector:
+    type: was
+    app: backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+```
+`frontend-deployment.yml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: frontend-deployment
+ lables:
+   type: web
+   app: frontend
+spec:
+ selector:
+   matchLabels:
+     type: web
+     app: frontend
+ replicas: 2
+ template:
+   metadata:
+     labels:
+       type: web
+       app: frontend
+   spec:
+    containers:
+    - name: frontend
+      image: xc7230/frontend:latest
+      envFrom:
+      ports:
+      - containerPort: 80
+      resources:
+        requests:
+          cpu: 100m
+        limits:
+          cpu: 200m
+```
+`frontend 서비스`
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  labels:
+    type: web
+    app: frontend
+spec:
+  selector:
+    type: web
+    app: frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: api
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+```
+`sql 파드 생성`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    type: web
+    app: db
+spec:
+  selector:
+    matchLabels:
+      type: web
+      app: db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        type: web
+        app: db
+        version: latest
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: node1
+      containers:
+      - name: container
+        image: mysql:latest
+        ports:
+        - containerPort: 3306
+        envFrom:
+        - secretRef:
+            name: mysql-sec
+        volumeMounts:
+        - name: mysql-pvc-pv
+          mountPath: /var/lib/mysql
+      volumes:
+      - name : mysql-pvc-pv
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+```
+
+`sql 서비스 생성`
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  labels:
+    type: web
+    app: db
+spec:
+  selector:
+    type: web
+    app: db
+  ports:
+    - name: mysql
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+```
+
+
+- kiali 대시보드 접속
+![image](./image/service_mesh/7.png)<br/>
+
+https://feellikeghandi.tistory.com/
