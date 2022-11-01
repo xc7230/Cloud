@@ -74,7 +74,7 @@ aws configure
 보안키PW<br/>
 지역명<br/>
 
-### 프로젝트
+### Terraform으로 EC2 생성
 - VsCode 설정<br/>
 ![image](./image/IoC/12.png)<br/>
 
@@ -121,3 +121,231 @@ terraform apply
 ![image](./image/IoC/16.png)<br/>
 `yes`를 입력하면 내 AWS EX2 인스턴스가 생성된다.<br/>
 ![image](./image/IoC/17.png)<br/>
+
+
+- ec2에 보안그룹 추가하기<br/>
+  https://registry.terraform.io/providers/hashicorp/aws/latest/docs 을 활용해서<br/>
+`main.tf`
+```shell
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.16"
+    }
+  }
+
+  required_version = ">= 1.2.0"
+}
+
+provider "aws" {
+  region  = "ap-northeast-2"
+}
+
+
+resource "aws_security_group" "ec2_allow_rule" {
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+}
+
+
+resource "aws_instance" "app_server" {
+  ami           = "ami-068a0feb96796b48d"
+  instance_type = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.ec2_allow_rule.id]
+  tags = {
+    Name = "ExampleAppServerInstance"
+  }
+}
+```
+```shell
+terraform plan  # 생성가능한지 확인
+terraform apply # terraform plan에서 이상이 없으면 실행해준다.
+```
+
+- 확인<br/>
+![image](./image/IoC/18.png)<br/>
+업데이트된 ec2에 보안그룹이 추가됐다.<br/>
+
+### 변수활용해서 EC2 만들기<br/>
+같은 디렉토리 안에 변수를 담을 tf파일 생성해준다.<br/>
+`variables.tf`
+```tf
+variable "app_server_ami" {
+  type = string
+  default = "ami-068a0feb96796b48d"
+  
+}
+
+
+variable "app_server_type" {
+  type = string
+  default = "t2.micro"  
+}
+
+# 원래 main 안에 있던 변수는 제거해준다.
+```
+`terraform.tfvars`
+```tf
+app_server_ami = "ami-012b9d1d0d2e2c900"
+# app_server_type = "t2.micro"
+```
+- 확인
+```shell
+terraform plan  # 생성가능한지 확인
+terraform apply # terraform plan에서 이상이 없으면 실행해준다.
+```
+![image](./image/IoC/19.png)<br/>
+
+
+- 퍼블릭 IP 생성하기<br/>
+`main.tf`
+```tf
+## 마지막에 추가 후 apply
+output "app_server_public_ip" {
+  description = "aws instance public_ip"
+  value = aws_instance.app_server.public_ip
+}
+```
+
+- 확인<br/>
+![image](./image/IoC/20.png)<br/>
+
+### VPC
+`main.tf'
+```tf
+provider "aws" {
+  region  = "ap-northeast-2"
+}
+
+resource "aws_vpc" "my-vpc2" {
+  cidr_block       = "200.200.0.0/16"
+  instance_tenancy = "default"
+  enable_dns_hostnames = true #DNS 호스트 네임 활성화
+  tags = {
+    Name = "my-vpc2"
+  }
+}
+```
+- 확인<br/>
+![image](./image/IoC/21.png)<br/>
+
+#### 서브넷 생성하기
+`main.tf` 에 추가<br/>
+```tf
+resource "aws_subnet" "my2-subnet-1" {
+  vpc_id     = aws_vpc.my-vpc2.id
+  cidr_block = "200.200.10.0/24"
+  availability_zone = "ap-northeast-2a"
+  tags = {
+    Name = "my2-subnet-1"
+  }
+}
+
+# 필요한 만큼 추가
+```
+
+- 확인<br/>
+![image](./image/IoC/22.png)<br/>
+
+#### 게이트웨이 추가
+`main.tf` 에 추가<br/>
+```tf
+resource "aws_internet_gateway" "my-gw2" {
+  vpc_id = aws_vpc.my-vpc2.id
+
+  tags = {
+    Name = "my-gw2"
+  }
+}
+```
+
+- 확인<br/>
+![image](./image/IoC/23.png)<br/>
+
+#### 라우팅테이블
+```tf
+## route
+resource "aws_default_route_table" "my2-route-table" {
+  default_route_table_id = aws_vpc.my-vpc2.default_route_table_id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.my-gw2.id # 게이트웨이와 연결
+  }
+
+  tags = {
+    Name = "my2-route-table"
+  }
+}
+```
+
+#### 보안그룹
+```tf
+resource "aws_security_group" "ec2_allow_rule2" {
+    vpc_id      = aws_vpc.my-vpc2.id
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+}
+```
+#### ec2
+```tf
+resource "aws_instance" "app_server2" {
+  associate_public_ip_address = true  # 퍼블릭 ip
+  ami           = "ami-068a0feb96796b48d"
+  instance_type = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.ec2_allow_rule2.id]
+  subnet_id = aws_subnet.my2-subnet-1.id  # 서브넷 연결
+  key_name = "cloudcamp"  # key 추가
+  tags = {
+    Name = "ExampleAppServerInstance"
+  }
+}
+
+output "app_server_public_ip" {
+  description = "aws instance public_ip"
+  value = aws_instance.app_server2.public_ip
+}
+```
+- 만든 EC2 제거
+```shell
+terraform destroy
+```
+
+## 모듈
+
+```
+module "module_ec2_1" {
+   source = "./vpc" 
+   app_server_ami = "ami-09cf633fe86e51bf0"
+   app_server_type = "t2.micro"
+}
+```

@@ -7,6 +7,7 @@
 - [AWS를 이용한 3계층 아키텍처 구축](https://github.com/xc7230/Cloud/blob/main/3%EA%B3%84%EC%B8%B5(aws).md)
 - [Lambda](https://github.com/xc7230/Cloud/blob/main/Lambda.md)
 - [CloudWatch](https://github.com/xc7230/Cloud/blob/main/AwsCloudWatch.md)
+- [IaC](https://github.com/xc7230/Cloud/blob/main/IaC.md)
 
 ## Python
 - [Django 프레임 워크를 이용한 CRUD설계](https://github.com/xc7230/django/blob/main/CRUD.md)
