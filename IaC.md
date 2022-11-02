@@ -317,14 +317,39 @@ resource "aws_security_group" "ec2_allow_rule2" {
 }
 ```
 #### ec2
+
+- 변수 생성<br/>
+`variables.tf`
+```tf
+variable "app_server_ami" {
+  type = string
+  default = "ami-068a0feb96796b48d"  
+}
+
+variable "app_server_type" {
+  type = string
+  default = "t2.micro"  
+}
+
+variable "my_ec2_keyname" {
+  type = string
+  default = "cloudkey"
+}
+```
+`terraform.tfvars`
+```tfvars
+app_server_ami = "ami-068a0feb96796b48d"
+app_server_type = "t2.micro"
+```
+
 ```tf
 resource "aws_instance" "app_server2" {
   associate_public_ip_address = true  # 퍼블릭 ip
-  ami           = "ami-068a0feb96796b48d"
-  instance_type = "t2.micro"
+  ami           = var.app_server_ami
+  instance_type = var.app_server_type
   vpc_security_group_ids = [aws_security_group.ec2_allow_rule2.id]
   subnet_id = aws_subnet.my2-subnet-1.id  # 서브넷 연결
-  key_name = "cloudcamp"  # key 추가
+  key_name = vae.my_ec2_keyname  # key 추가
   tags = {
     Name = "ExampleAppServerInstance"
   }
@@ -341,7 +366,10 @@ terraform destroy
 ```
 
 ## 모듈
+모듈을 사용할 디렉토리를 하나 만들고 그 안에 위에서 만든 Terraform 프로젝트 디렉토리를 집어 넣는다.<br/>
+![image](./image/IoC/24.png)<br/>
 
+`main.tf`
 ```
 module "module_ec2_1" {
    source = "./vpc" 

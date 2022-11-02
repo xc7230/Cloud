@@ -10,16 +10,9 @@ useradd zk
 passwd zk
 ```
 
-- sshd를 통해 로그인 불가능하게 설정<br/>
+- 자바 설치(master, slave01, slave02)
 ```shell
-vi /etc/ssh/sshd_config
-```
-`PermitRootLogin yes`를 `PermitRootLogin no` 바꿔주고 밑에 줄에 `DenyUsers zk`을 추가한다.<br/>
-![image](./image/hadoop_zookeeper/1.png)<br/>
-
-- sshd 재시작<br/>
-```shell
-systemctl restart sshd
+yum install java-1.8.0-openjdk.x86_64 ant -y
 ```
 
 - zookeeper 다운<br/>
@@ -49,9 +42,47 @@ tickTime=2000
 dataDir=/data/zookeeper
 clientPort=2181
 maxClientCnxns=60
-server.1=master:2888:3888   
-server.2=slave01:2888:3888
-server.3=slave02:2888:3888
+server.1=zk01:2888:3888   # 연결할 노드들이 있으면 추가해준다.   
 ```
 
+## Zookeeper service 연결
+```shell
+su -l zk
+sudo vi /etc/systemd/system/zk.service
+```
+```service
+[Unit]
+Description=Zookeeper Daemon
+Documentation=http://zookeeper.apache.org
+Requires=network.target
+After=network.target
+
+[Service]    
+Type=forking
+WorkingDirectory=/opt/zookeeper
+Group=zk
+ExecStart=/opt/zookeeper/bin/zkServer.sh start /opt/zookeeper/conf/zoo.cfg
+ExecStop=/opt/zookeeper/bin/zkServer.sh stop /opt/zookeeper/conf/zoo.cfg
+ExecReload=/opt/zookeeper/bin/zkServer.sh restart /opt/zookeeper/conf/zoo.cfg
+TimeoutSec=30
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+```shell
+systemctl daemon-reload
+```
+
+## Zookeeper 실행
+- 실행
+```shell
+sudo systemctl start zk
+```
+
+- 확인
+```shell
+sudo /opt/zookeeper/bin/zkCli.sh -server 127.0.0.1:2181
+```
+![image](./image/hadoop_zookeeper/2.png)<br/>
 
