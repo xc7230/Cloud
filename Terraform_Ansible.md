@@ -140,26 +140,14 @@ resource "aws_security_group" "ec2_allow_rule2" {
 
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-}
-
-resource "aws_security_group" "ec2_allow_rule3" {
-    vpc_id      = aws_vpc.my-vpc2.id
   ingress {
-    description = "html"
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
 
-  }
-
+  }  
   egress {
     from_port   = 0
     to_port     = 0
@@ -216,8 +204,3 @@ terraform apply
 생성된 EC2인스턴스 아이피를 입력했을때, 아파치 웹서버가 실행되면 성공<br/>
 ![image](./image/tera_ansi/1.png)<br/>
 
-
-```shell
-[demo]
-3.36.68.157 ansible_ssh_user=ubuntu ansible_ssh_private_key_file=/root/key
-```
