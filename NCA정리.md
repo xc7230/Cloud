@@ -1,0 +1,93 @@
+- SSD Server가 보장하는 기본 IOPS : 4000
+- GPU Server : 이미지, 렌더링, 과학 연산, 머신러닝
+- VDS : 단독으로 제공된 서버에 하나의 클라우드 서버만 생성
+- Bare Metal Server : 물리서버를 가상화 환경 없이 단독 제공
+- High Performance Computing : 방대한 양의 데이터 분석 서버
+- Data Teleporter : 100TB 규모의 데이터를 이전해주는 서비스
+- Load Balance
+    - 부하분산 방식 : Round Robin, Least Connection, Source IP Hash
+- IPsec VPN : 외부에 있는 고객의 네트워크와 네이버 클라우드의 네트워크를 연결
+- NAT Gateway :  비공인 IP -> 공인 IP 연결
+- Global Route Manager : DNS 기반, 트래픽을 안정적으로 로드 벨런싱 해주는 상품
+    - 로드밸런싱 방식 : Round Robin, Weighted, GeoLocation, Fail Over
+- Cloud DB
+    - MySQL
+        - 자동백업 30일 까지
+        - 기본 포트 3306
+    - Redis
+        - 자동백업 7일 까지
+        - Shard 구성 3 ~ 10 개 까지
+        - Shard 당 Slave노드 4개까지
+        - 기본 포트 6379
+    - MSSQL
+        - 자동백업 30일 까지
+        - 읽기 가능 Slave 5대 까지
+        - Classic에서 MSSQL 2016 Standard edition 버전
+        - VPC에서 MSSQL 2019 Standard edition 버전
+    - CUBRID
+        - 기본 포트 8001
+    - PostgreSQL
+        - 기본 포트 5432
+    - MariaDB
+        - 기본 포트 3306
+- Secure 
+    - Secure Zone : 보안이 강화된 Zone에서 정보를 관리
+    - Basic Security : 모든 고객에게 기본으로 제공
+    - ACG(Access Control Group) : IP 주소/포트기반으로 네트워크 접근 관리
+    - App Safer : 모바일 애플리케이션 실행중 발생 하는 보안 위협 탐지
+    - Site Safer : 회원이 개발한 웹사이트를 검사
+    - File Safer : 고객의 웹 사이트 업/다운로드 검사
+    - Security Monitoring : IDS, Anti-Virus, IPS, WAF와 같은 보안 상품들을 이용하여 제공되는 서비스
+    - SSL VPN : 외부 -> 기업 내부 네트워크 접속
+    - Web Security Checker : 고객의 웹 서버를 자동으로 진당
+    - System Security Checker : 서버의 운영체제, WAS의 보안 설정 점검
+        - 진단 대상 : Apache, Tomcat, NginX
+    - App Security Checker : 모바일 앱의 잠재적인 보안 취약점 점검(체크)
+    - Compliance Guide : 고객이 보안과 규제를 알기 쉽게 정리한 가이드
+    - Key Management Service : 고객의 암호화 키 관리
+    - Certificate Manager : SSL 인증서 등록, 관리
+- API 서비스
+    - CLOVA Speech Recognition(CSR) : 사람의 목소리를 텍스트로 변경
+    - CLOVA Face Recognition(CFR) : 얼굴 인식
+    - CLOVA Voice : 음성 합성기술로 자연스러운 목소리 제공
+    - CLOVA Chatbot : 자동으로 고객대응
+    - CLOVA OCR : 인쇄물 상의 문자 인식
+    - Papago NMT : 자동 번역, 띄어쓰기 포함 최대 5000자
+        - Papago Korean Name Romanizer : 한글 이름을 로마자로 변환
+    - Pose Estimation : 신체 인식, 18개의 좌표 제공
+    - Object Detection : 이미지 속 사람, 자동차 같이 객체 탐지
+    - Map : 네이버 지도
+    - nShortURL : 긴 URL -> 짧은 URL 변경
+    - API Gateway : API 관리, 모니터링
+    - Search Trend : 네이버 통합검색 결과에 대한 통계
+- TensorFlow Server : 딥러닝, 머신러닝 패키지가 설치된 서버 제공
+- GeoLocation : 고객이 질의한 지역의 DB정보를 고객 서버로 전달
+- CAPTCHA : 어뷰징 방지
+- Simple & Easy Notification Service : 서비스에 SMS, PUSH 등 메시지 알림 기능 구현
+- Cloud Outbound Mailer : 대용량 메일 발송
+- Pinpoint : 분산 서비스, 시스템의 성능 분석/진단/추척 플랫폼 서비스
+- JEUS : 국내 점유율 1위 WAS
+- WebtoB : 국내 차세대 웹서버
+- VOD Transcoder : 미디어 파일을 다양한 화질로 변환
+- Image Optimizer : 원본 이미지의 해상도 변환
+- Live Station : 실시간 방송 서비스의 필요한 기능 제공
+- VOD Station : VOD 스트리밍 서비스 구현
+- Cloud Monitoring, Analytics
+    - Web service Monitoring System : 웹페이지 응답속도 모니터링
+    - Network Traffic Monitoring : 네트워크 Packet 정보를 OpenFlow 기술로 분석, 제공
+    - Cloud Activity Tracer : 네이버 클라우드 계정활동 로그 자동 수집
+    - Resource Manager : 네이버 클라우드 내 모든 리소스 통합 관리
+    - Cloud Insight : 클라우드 환경 지표 통합 관리 및 모니터링
+    - Cloud Advisor : 네이버 클라우드 자체 운영 점검 리포트를 제공
+    - Cloud Log Analytics : 네이버 클라우드의 다양한 로그들을 한 곳에 저장
+    - Real User Analytics(RUA) : 서비스 페이지의 실사용자 데이터 수집, 분석
+    - Effective Log Search & Analytics : 로그들을 쉽고 빠르게 저장, 분석
+    - Cloud Hadoop : HBase, Spark, Hive, Presto등, 관리형 클라우드 분석
+    - Cloud Search : 홈페이지 내의 검색 기능을 빠르게 구현
+    -  Data Analytics Service : 고객의 행동 데이터를 다각도로 분석, 온라인 비즈니스를 효과저그로 운영 할 수 있게 해주는 서비스
+
+
+
+
+
+
