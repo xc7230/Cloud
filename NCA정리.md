@@ -14,6 +14,7 @@
     - MySQL
         - 자동백업 30일 까지
         - 기본 포트 3306
+        - 자동 생성 항목 : Private Domain, Cloud DB ACG
     - Redis
         - 자동백업 7일 까지
         - Shard 구성 3 ~ 10 개 까지
@@ -24,6 +25,7 @@
         - 읽기 가능 Slave 5대 까지
         - Classic에서 MSSQL 2016 Standard edition 버전
         - VPC에서 MSSQL 2019 Standard edition 버전
+        - 기본 포트 1433
     - CUBRID
         - 기본 포트 8001
     - PostgreSQL
@@ -60,6 +62,16 @@
     - nShortURL : 긴 URL -> 짧은 URL 변경
     - API Gateway : API 관리, 모니터링
     - Search Trend : 네이버 통합검색 결과에 대한 통계
+    - Object Storage
+        - 업로드 최대 사이즈 : 2G
+        - API 이용 업로드 사이즈 : 10TB
+        - Object Storage 연동 필수 : CLOVA Speech, CLOVA Dubbing, VOD Transcoder, VOD Station, Video Player, Image Optimizer, SourceBuild, Cloud Hadoop
+        - 버킷 : 최대 1,000 개
+        - Lifecycle Management : 접두어 방식
+    - Archive Storage
+        - 업로드 최대 사이즈 : 2G
+        - API 이용 업로드 사이즈 : 5G
+
 - TensorFlow Server : 딥러닝, 머신러닝 패키지가 설치된 서버 제공
 - GeoLocation : 고객이 질의한 지역의 DB정보를 고객 서버로 전달
 - CAPTCHA : 어뷰징 방지
@@ -70,8 +82,8 @@
 - WebtoB : 국내 차세대 웹서버
 - VOD Transcoder : 미디어 파일을 다양한 화질로 변환
 - Image Optimizer : 원본 이미지의 해상도 변환
-- Live Station : 실시간 방송 서비스의 필요한 기능 제공
-- VOD Station : VOD 스트리밍 서비스 구현
+- Live Station : 실시간 방송 서비스의 필요한 기능 제공, CDN 연동 필수
+- VOD Station : VOD 스트리밍 서비스 구현, CDN 연동 필수
 - Cloud Monitoring, Analytics
     - Web service Monitoring System : 웹페이지 응답속도 모니터링
     - Network Traffic Monitoring : 네트워크 Packet 정보를 OpenFlow 기술로 분석, 제공
@@ -83,11 +95,62 @@
     - Real User Analytics(RUA) : 서비스 페이지의 실사용자 데이터 수집, 분석
     - Effective Log Search & Analytics : 로그들을 쉽고 빠르게 저장, 분석
     - Cloud Hadoop : HBase, Spark, Hive, Presto등, 관리형 클라우드 분석
-    - Cloud Search : 홈페이지 내의 검색 기능을 빠르게 구현
+    - Cloud Search : 홈페이지 내의 검색 기능을 빠르게 구현, 형태소 분석 처리기 기반
     -  Data Analytics Service : 고객의 행동 데이터를 다각도로 분석, 온라인 비즈니스를 효과저그로 운영 할 수 있게 해주는 서비스
-
-
-
+- Jenkins : 포트번호 18080
+- Git
+    - SourceCommit : 프라이빗 Git 리파지토리 서비스
+    - SourceBuild : 소스코드 컴파일, 컴포넌트 패키징을 한번에 지원하는 관리형 소스코드 빌드 서비스
+    - SourceDeploy : 업데이트된 소스들을 자동으로 서버에 배포, 적용
+    - SourcePipeline : SourceCommit, SourceBuild, SourceDeploy 상품을 통합
+- Hybrid Cloud Hosting : 네이버가 운영하는 데이터센터 환경과 클라우드 환경의 여러 IT 자원들을 통합, 운영
+- Cloud Connect : 데이터 센터 -> 클라우드 플랫폼 전용 사설 네트워크로 연결
+- VMware on Ncloud: VMware 와 Ncloud 인프라 기술을 통합
+    - Hybrid & Private Cloud : VMware on Ncloud가 속한 서비스
+- 백업 서비스 : 7일 ~ 24 주까지
+- 로드밸런서
+    - 분배 알고리즘 : Round Robin, Least Connection, Source IP Hash
+- 리눅스 네트윅 트래픽 확인 : `netstat -i, ifconfig`
+- Ncloud
+    - 서버 : 최대 50대
+    - Classic 환경
+        - 외부 접속 ID : 10개    
+    - ACG
+        - 생성 갯수
+            - Classic 환경 : 100 개
+            - VPC 환경 : 500 개
+        - 규칙
+            - Classic 환경 : 100개
+            - VPC 환경 : 100개
+        - 중복 포함
+            - Classic 환경 : 5개
+        - NIC당 최대 생성 갯수
+            - VPC : 3개
+    - VPC : 3개
+    - Auto Scaling
+        - Classic 환경 : Compact, Standard
+        - VPC 환경 : High-CPU, Standard, High-Memory
+        - 총 150GB이하 까지 적용가능
+        - Launch Configuration : 최대 100개
+        - Auto Scaling Group : 최대 100개
+            - 스케줄 : 최대 100개
+            - Scaling Policy : 최대 10개
+            - 서버 : 최대 30대
+            - Load Balancer : 최대 10개
+    - 포트 포워딩 : 1024 - 65534
+    - 스토리지
+        - 추가할 수 없는 서버 : Micro Type Server, Bare Metal Server, Application Launcher Server
+        - 서버당 추가 갯수 : 기본 1개 + 추가 15개 = 전체 16개
+        - 서버당 추가 가능한 스토리지 최대 용량 : 2,000GB, 2TB
+    - Subnet
+        - Private 
+            - Classic : 1개, 192.168.0.0/16 내에서 /24단위
+    - NAS
+        - 용량 : 500GB ~ 10,000GB
+        - 볼륨확장 단위 용량 : 100GB
+        - 생성 갯수 : 제한 없음
+    - Backup : 
+- Node.js Express : 기본 포트 3000
 
 
 

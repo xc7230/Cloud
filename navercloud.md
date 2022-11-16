@@ -94,3 +94,52 @@ echo 'ncp!@#123' | passwd -stdin root
 ### 스냅샷을 다른 서버의 추가 스토리지로 생성
 ![image](./image/ncloud/52.png)<br/>
 ![image](./image/ncloud/53.png)<br/>
+
+## Load Balancer
+### Target Group 생성
+![image](./image/ncloud/54.png)<br/>
+![image](./image/ncloud/55.png)<br/>
+![image](./image/ncloud/56.png)<br/>
+![image](./image/ncloud/57.png)<br/>
+![image](./image/ncloud/58.png)<br/>
+
+### Load Balancer 생성
+![image](./image/ncloud/59.png)<br/>
+![image](./image/ncloud/60.png)<br/>
+![image](./image/ncloud/61.png)<br/>
+![image](./image/ncloud/62.png)<br/>
+![image](./image/ncloud/63.png)<br/>
+
+## Auto Scaling
+### Launch Configuration
+![image](./image/ncloud/64.png)<br/>
+![image](./image/ncloud/65.png)<br/>
+![image](./image/ncloud/66.png)<br/>
+![image](./image/ncloud/67.png)<br/>
+
+### Auto Scaling Group 구성
+![image](./image/ncloud/68.png)<br/>
+![image](./image/ncloud/69.png)<br/>
+![image](./image/ncloud/70.png)<br/>
+![image](./image/ncloud/71.png)<br/>
+![image](./image/ncloud/72.png)<br/>
+![image](./image/ncloud/73.png)<br/>
+
+## Object Storage
+### Object Storage 구성
+![image](./image/ncloud/74.png)<br/>
+![image](./image/ncloud/75.png)<br/>
+
+### Bucket
+![image](./image/ncloud/76.png)<br/>
+![image](./image/ncloud/77.png)<br/>
+![image](./image/ncloud/78.png)<br/>
+![image](./image/ncloud/79.png)<br/>
+![image](./image/ncloud/80.png)<br/>
+![image](./image/ncloud/81.png)<br/>
+
+### NAS
+![image](./image/ncloud/82.png)<br/>
+![image](./image/ncloud/83.png)<br/>
+![image](./image/ncloud/84.png)<br/>
+![image](./image/ncloud/85.png)<br/>
