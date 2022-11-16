@@ -125,6 +125,16 @@ echo 'ncp!@#123' | passwd -stdin root
 ![image](./image/ncloud/72.png)<br/>
 ![image](./image/ncloud/73.png)<br/>
 
+### Event Rule
+![image](./image/ncloud/91.png)<br/>
+![image](./image/ncloud/92.png)<br/>
+![image](./image/ncloud/93.png)<br/>
+![image](./image/ncloud/94.png)<br/>
+![image](./image/ncloud/95.png)<br/>
+![image](./image/ncloud/96.png)<br/>
+![image](./image/ncloud/97.png)<br/>
+![image](./image/ncloud/98.png)<br/>
+
 ## Object Storage
 ### Object Storage 구성
 ![image](./image/ncloud/74.png)<br/>
@@ -143,3 +153,15 @@ echo 'ncp!@#123' | passwd -stdin root
 ![image](./image/ncloud/83.png)<br/>
 ![image](./image/ncloud/84.png)<br/>
 ![image](./image/ncloud/85.png)<br/>
+
+## DB
+### Cloud DB 구성
+![image](./image/ncloud/86.png)<br/>
+![image](./image/ncloud/87.png)<br/>
+![image](./image/ncloud/88.png)<br/>
+![image](./image/ncloud/89.png)<br/>
+![image](./image/ncloud/90.png)<br/>
+
+### ACG 인바운드 규칙 편집
+![image](./image/ncloud/99.png)<br/>
+![image](./image/ncloud/100.png)<br/>

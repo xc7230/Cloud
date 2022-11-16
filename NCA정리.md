@@ -6,6 +6,9 @@
 - Data Teleporter : 100TB 규모의 데이터를 이전해주는 서비스
 - Load Balance
     - 부하분산 방식 : Round Robin, Least Connection, Source IP Hash
+    - Classic Load Balancer
+        - 서버 대수 : 최대 50대
+        - 프로토콜 개수 : 최대 20대
 - IPsec VPN : 외부에 있는 고객의 네트워크와 네이버 클라우드의 네트워크를 연결
 - NAT Gateway :  비공인 IP -> 공인 IP 연결
 - Global Route Manager : DNS 기반, 트래픽을 안정적으로 로드 벨런싱 해주는 상품
@@ -15,30 +18,42 @@
         - 자동백업 30일 까지
         - 기본 포트 3306
         - 자동 생성 항목 : Private Domain, Cloud DB ACG
+        - 스토리지 용량 : 10 ~ 6,000GB
+        - Slave Server : 10개
+        - 모니터링 : 60일
+        - mysql -> Object Storage : 5TB
+        - 로드밸런서 : Classic Load Balancer, Network Load Balancer, Network Proxy Load Balancer
     - Redis
         - 자동백업 7일 까지
         - Shard 구성 3 ~ 10 개 까지
         - Shard 당 Slave노드 4개까지
         - 기본 포트 6379
+        - 모니터링 : 4주
     - MSSQL
         - 자동백업 30일 까지
         - 읽기 가능 Slave 5대 까지
         - Classic에서 MSSQL 2016 Standard edition 버전
         - VPC에서 MSSQL 2019 Standard edition 버전
         - 기본 포트 1433
+        - 데이터 스토리지 : 10 ~ 2TB
+        - 모니터링 : 4주
     - CUBRID
         - 기본 포트 8001
     - PostgreSQL
         - 기본 포트 5432
     - MariaDB
         - 기본 포트 3306
+    - MongoDB
+        - 기본 포트 : 27017
 - Secure 
     - Secure Zone : 보안이 강화된 Zone에서 정보를 관리
     - Basic Security : 모든 고객에게 기본으로 제공
     - ACG(Access Control Group) : IP 주소/포트기반으로 네트워크 접근 관리
     - App Safer : 모바일 애플리케이션 실행중 발생 하는 보안 위협 탐지
+        - 업로드 APK사이즈 : 최대 100MB
     - Site Safer : 회원이 개발한 웹사이트를 검사
     - File Safer : 고객의 웹 사이트 업/다운로드 검사
+        - Hash 알고리즘 : MD5, SHA-1
     - Security Monitoring : IDS, Anti-Virus, IPS, WAF와 같은 보안 상품들을 이용하여 제공되는 서비스
     - SSL VPN : 외부 -> 기업 내부 네트워크 접속
     - Web Security Checker : 고객의 웹 서버를 자동으로 진당
@@ -76,12 +91,14 @@
 - GeoLocation : 고객이 질의한 지역의 DB정보를 고객 서버로 전달
 - CAPTCHA : 어뷰징 방지
 - Simple & Easy Notification Service : 서비스에 SMS, PUSH 등 메시지 알림 기능 구현
+    - 프로젝트 : 최대 10개 생성
 - Cloud Outbound Mailer : 대용량 메일 발송
 - Pinpoint : 분산 서비스, 시스템의 성능 분석/진단/추척 플랫폼 서비스
 - JEUS : 국내 점유율 1위 WAS
 - WebtoB : 국내 차세대 웹서버
 - VOD Transcoder : 미디어 파일을 다양한 화질로 변환
 - Image Optimizer : 원본 이미지의 해상도 변환
+    - Object Storage, Cloud Log Analytics, CDN+ 과 연계
 - Live Station : 실시간 방송 서비스의 필요한 기능 제공, CDN 연동 필수
 - VOD Station : VOD 스트리밍 서비스 구현, CDN 연동 필수
 - Cloud Monitoring, Analytics
@@ -92,9 +109,20 @@
     - Cloud Insight : 클라우드 환경 지표 통합 관리 및 모니터링
     - Cloud Advisor : 네이버 클라우드 자체 운영 점검 리포트를 제공
     - Cloud Log Analytics : 네이버 클라우드의 다양한 로그들을 한 곳에 저장
+        - 저장용량 : 100GB
+        - 보관기간 : 30일
     - Real User Analytics(RUA) : 서비스 페이지의 실사용자 데이터 수집, 분석
+        - Network : RUA 지표 중 페이지 요청한 후 데이터를 받기 위해 서버와의 연결이 맺어지기까지 대기하는 시간
+        - TTFB : 웹페이지 요청, 첫번째 정보를 수신하기까지 대기 시간
+        - DomContentLoaded : HTML 문서가 준비되어 분석되기까지의 시간
+        - Browser Load Time : HTML 페이지가 화면에 로딩이 완료되기 까지 시간
+        - Server Response : 웹서버가 브라우저 요청에 응답하는데 걸리는 시간
+        - Dom Processing : HTML을 파싱하고 해석하는데 걸리는 시간
+        - Page Rendering : JavaScript를 실행하면서 페이지를 구성하는 하위 이미지를 로딩하는데 걸리는 시간
     - Effective Log Search & Analytics : 로그들을 쉽고 빠르게 저장, 분석
     - Cloud Hadoop : HBase, Spark, Hive, Presto등, 관리형 클라우드 분석
+        - 엣지노드 : 클러스터에서 외부 접속을 위한 Gateway용 노드
+        - 작업자 노드 : 2개 ~ 8개
     - Cloud Search : 홈페이지 내의 검색 기능을 빠르게 구현, 형태소 분석 처리기 기반
     -  Data Analytics Service : 고객의 행동 데이터를 다각도로 분석, 온라인 비즈니스를 효과저그로 운영 할 수 있게 해주는 서비스
 - Jenkins : 포트번호 18080
@@ -127,6 +155,9 @@
         - NIC당 최대 생성 갯수
             - VPC : 3개
     - VPC : 3개
+        - Deny-Allow : VPC당 4개
+        - Deny-Allow : IP등록 최대 100개
+        - SSL VPN 외부 접속ID : 최대 500개
     - Auto Scaling
         - Classic 환경 : Compact, Standard
         - VPC 환경 : High-CPU, Standard, High-Memory
@@ -150,7 +181,33 @@
         - 볼륨확장 단위 용량 : 100GB
         - 생성 갯수 : 제한 없음
     - Backup : 
+    - Secure Token Service(STS) : 네이버 클라우드 내 리소스에 대한 액세스를 제어 할 수 있는 기한 제한이 있는 Access Key를 생성
 - Node.js Express : 기본 포트 3000
+- Global DNS
+    - A레코드 : TTL 300초
+    - NS레코드 : TTL 86400초
+- Global CDN
+    - MISS : 요청한 컨텐츠가 서버에 없어 원본 서버로 부터 콘텐츠를 전송받은 후 서버에 저장하는 경우
+    - HIT : 요청한 컨텐츠가 서버에 있어 바로 응답할 경우
+    - BYPASS : 원본 서버에 Set-Cookie 헤더, Cache-Control 헤더에 private, no-cache, max-age=0등의 내용일 있을경우 CDN에 경유하지 않고 바로 전달하는 경우
+    - CDN+ 
+        - 고객 보유 도메인 : 10개
+        - 모니터링 데이터 조회 기간 : 2일 ~ 3개월
+    - Global CDN 
+        - 고객 보유 도메인 : 50개
+        - 모니터링 데이터 조회 기간 : 1일 ~ 3개월
+- Cloud Data Streaming Service
+    - Kafka Broker의 포트 번호 : 9092
+    - Kafka Broker TLS의 포트번호 : 9093
+    - Zookeeper의 포트번호 : 2181
+    - CMAK의 포트번호 : 9000
+- Elasticsearch
+    - HTTP의 포트 번호 : 9200
+    - Kibana의 HTTP 포트 번호 : 5601
+    - 데이터 노드 : 3 ~ 10개
+
+
+
 
 
 
