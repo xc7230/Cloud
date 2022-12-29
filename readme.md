@@ -1,3 +1,7 @@
+---
+layout: post
+---
+
 # Cloud
 ## Linux
 - [CentOS를 이용한 3계층 아키텍처 구축](https://github.com/xc7230/Cloud/blob/main/3%EA%B3%84%EC%B8%B5(%EA%B0%80%EC%83%81%EB%A8%B8%EC%8B%A0).md)
