@@ -1,6 +1,8 @@
 ---
 layout: post
+title:  "Cloud Study"
 ---
+CloudCamp에서 배운 내용 정리<br/>
 
 # Cloud
 ## Linux
